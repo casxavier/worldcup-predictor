@@ -617,12 +617,13 @@ import { getFirestore, collection, doc,
 // ║   🔧 PASTE YOUR FIREBASE CONFIG BELOW   ║
 // ╚══════════════════════════════════════════╝
 const firebaseConfig = {
-  apiKey:            "PASTE-YOUR-KEY-HERE",
-  authDomain:        "PASTE-YOUR-DOMAIN-HERE",
-  projectId:         "PASTE-YOUR-PROJECT-ID-HERE",
-  storageBucket:     "PASTE-YOUR-BUCKET-HERE",
-  messagingSenderId: "PASTE-YOUR-SENDER-ID-HERE",
-  appId:             "PASTE-YOUR-APP-ID-HERE"
+  apiKey: "AIzaSyBO3YHKEkvodyB3YUE35JescB3e10ja0uA",
+  authDomain: "worldcup-predictor-6fdb8.firebaseapp.com",
+  projectId: "worldcup-predictor-6fdb8",
+  storageBucket: "worldcup-predictor-6fdb8.firebasestorage.app",
+  messagingSenderId: "255220213792",
+  appId: "1:255220213792:web:4d628451b116a95d703445",
+  measurementId: "G-6MGEQGYESZ"
 };
 
 // PASSCODE
@@ -746,5 +747,16 @@ window.addPlayer = async function() {
   const name = inp.value.trim();
   if (!name) return toast('⚠️ Enter a name.', '#e67e22');
   if (players.includes(name)) return toast('⚠️ Player already exists.', '#e67e22');
+
   try {
-    await setDoc(doc(playersCol
+    // Use player name as doc id sanitized for safety
+    const docId = name.toLowerCase().replace(/\s+/g, '-');
+
+    await setDoc(doc(playersCol, docId), { name }); // Add to Firestore
+    inp.value = '';
+    toast(`✅ Player "\${name}" added!`);
+  } catch (err) {
+    toast('❌ Failed to add player. Try again.', '#e74c3c');
+    console.error(err);
+  }
+};

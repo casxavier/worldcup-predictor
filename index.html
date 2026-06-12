@@ -1,1060 +1,1103 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WC 2026 Predictor</title>
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WC 2026 Predictor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
 
-    :root {
-        --bg:      #0b1120;
-        --surface: #131d33;
-        --card:    #192035;
-        --border:  #243050;
-        --gold:    #f0c040;
-        --green:   #22c55e;
-        --red:     #ef4444;
-        --blue:    #3b82f6;
-        --muted:   #7080a0;
-        --text:    #e2e8f4;
-        --heading: #ffffff;
-        --r:       12px;
-    }
+  :root {
+    --bg:      #0b1120;
+    --surface: #131d33;
+    --card:    #192035;
+    --border:  #243050;
+    --gold:    #f0c040;
+    --green:   #22c55e;
+    --red:     #ef4444;
+    --blue:    #3b82f6;
+    --muted:   #7080a0;
+    --text:    #e2e8f4;
+    --heading: #ffffff;
+    --r:       12px;
+  }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-        background: var(--bg);
-        color: var(--text);
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        min-height: 100vh;
-    }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
 
-    /* ── TOPBAR ── */
-    .topbar {
-        background: var(--surface);
-        border-bottom: 2px solid var(--gold);
-        position: sticky; top: 0; z-index: 100;
-    }
-    .topbar-inner {
-        max-width: 1100px; margin: 0 auto;
-        padding: 12px 20px;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-    }
-    .logo {
-        font-family: 'Bebas Neue', sans-serif;
-        font-size: 26px; letter-spacing: 2px;
-        color: var(--gold);
-        line-height: 1;
-    }
-    .logo span { color: var(--text); font-size: 13px; display: block; letter-spacing: 1px; font-family: 'Inter', sans-serif; font-weight: 500; margin-top: 1px; }
-    .user-badge {
-        display: flex; align-items: center; gap: 8px;
-        background: var(--card); border: 1px solid var(--border);
-        border-radius: 999px; padding: 6px 14px;
-        font-size: 13px; font-weight: 600; color: var(--gold);
-        cursor: pointer; transition: border-color .2s;
-    }
-    .user-badge:hover { border-color: var(--gold); }
-    .user-badge .dot { width:8px; height:8px; border-radius:50%; background:var(--green); }
-    .user-badge .dot.admin { background: var(--gold); }
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 2px solid var(--gold);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-inner {
+    max-width: 1100px; margin: 0 auto;
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 2px;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .logo span { color: var(--text); font-size: 13px; display: block; letter-spacing: 1px; font-family: 'Inter', sans-serif; font-weight: 500; margin-top: 1px; }
 
-    /* ── TABS ── */
-    .tabs {
-        max-width: 1100px; margin: 0 auto;
-        padding: 14px 20px 0;
-        display: flex; gap: 6px; flex-wrap: wrap;
-    }
-    .tab {
-        padding: 8px 18px; border-radius: var(--r) var(--r) 0 0;
-        border: 1px solid var(--border); border-bottom: none;
-        background: var(--surface); color: var(--muted);
-        font-weight: 600; font-size: 13px; cursor: pointer;
-        transition: .15s;
-    }
-    .tab.active { background: var(--card); color: var(--gold); border-color: var(--gold); }
-    .tab:hover:not(.active) { color: var(--text); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
 
-    /* ── MAIN ── */
-    .main {
-        max-width: 1100px; margin: 0 auto; padding: 20px;
-    }
+  .user-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 14px;
+    font-size: 13px; font-weight: 600; color: var(--gold);
+    cursor: pointer; transition: border-color .2s;
+  }
+  .user-badge:hover { border-color: var(--gold); }
+  .user-badge .dot { width:8px; height:8px; border-radius:50%; background:var(--green); }
+  .user-badge .dot.admin { background: var(--gold); }
 
-    /* ── CARDS ── */
-    .card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--r);
-        padding: 20px;
-        margin-bottom: 16px;
-    }
-    .card h2 {
-        font-family: 'Bebas Neue', sans-serif;
-        font-size: 20px; letter-spacing: 1px;
-        color: var(--heading); margin-bottom: 14px;
-    }
-    .card h3 { color: var(--gold); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .btn-logout {
+    display: flex; align-items: center; gap: 6px;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 14px;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    cursor: pointer; transition: .2s;
+  }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
 
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+  /* ── TABS ── */
+  .tabs {
+    max-width: 1100px; margin: 0 auto;
+    padding: 14px 20px 0;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .tab {
+    padding: 8px 18px; border-radius: var(--r) var(--r) 0 0;
+    border: 1px solid var(--border); border-bottom: none;
+    background: var(--surface); color: var(--muted);
+    font-weight: 600; font-size: 13px; cursor: pointer;
+    transition: .15s;
+  }
+  .tab.active { background: var(--card); color: var(--gold); border-color: var(--gold); }
+  .tab:hover:not(.active) { color: var(--text); }
 
-    /* ── FORM ELEMENTS ── */
-    input, select, textarea {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text);
-        padding: 9px 12px;
-        font-size: 14px;
-        font-family: 'Inter', sans-serif;
-        width: 100%;
-        transition: border-color .15s;
-    }
-    input:focus, select:focus { outline: none; border-color: var(--blue); }
-    input[type=number] { width: 70px; text-align: center; }
-    select option { background: var(--surface); }
+  /* ── MAIN ── */
+  .main {
+    max-width: 1100px; margin: 0 auto; padding: 20px;
+  }
 
-    label { display: block; color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 1px;
+    color: var(--heading); margin-bottom: 14px;
+  }
+  .card h3 { color: var(--gold); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
 
-    .form-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
-    .form-group.grow { flex: 1; min-width: 120px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
 
-    /* ── BUTTONS ── */
-    button {
-        font-family: 'Inter', sans-serif;
-        font-weight: 700; font-size: 13px;
-        border: none; border-radius: 8px;
-        padding: 9px 18px; cursor: pointer;
-        transition: .15s; white-space: nowrap;
-    }
-    .btn-gold   { background: var(--gold); color: #0b1120; }
-    .btn-green  { background: var(--green); color: #0b1120; }
-    .btn-blue   { background: var(--blue); color: white; }
-    .btn-red    { background: var(--red); color: white; }
-    .btn-ghost  { background: transparent; border: 1px solid var(--border); color: var(--text); }
-    button:hover { opacity: .88; transform: translateY(-1px); }
-    button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  /* ── FORM ELEMENTS ── */
+  input, select, textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    width: 100%;
+    transition: border-color .15s;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--blue); }
+  input[type=number] { width: 70px; text-align: center; }
+  select option { background: var(--surface); }
 
-    /* ── MATCH CARD ── */
-    .match-item {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--r);
-        padding: 16px; margin-bottom: 10px;
-        transition: border-color .2s;
-    }
-    .match-item:hover { border-color: #3b4e70; }
-    .match-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-    .match-teams { font-size: 17px; font-weight: 700; color: var(--heading); }
-    .match-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  label { display: block; color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
 
-    .pill {
-        padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: .5px;
-    }
-    .pill-open   { background: #14532d; color: var(--green); }
-    .pill-locked { background: #450a0a; color: #f87171; }
-    .pill-done   { background: #1e3a5f; color: #93c5fd; }
-    .pill-admin  { background: #422006; color: var(--gold); }
+  .form-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.grow { flex: 1; min-width: 120px; }
 
-    .score-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .vs { color: var(--muted); font-weight: 700; font-size: 15px; }
+  /* ── BUTTONS ── */
+  button {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700; font-size: 13px;
+    border: none; border-radius: 8px;
+    padding: 9px 18px; cursor: pointer;
+    transition: .15s; white-space: nowrap;
+  }
+  .btn-gold   { background: var(--gold); color: #0b1120; }
+  .btn-green  { background: var(--green); color: #0b1120; }
+  .btn-blue   { background: var(--blue); color: white; }
+  .btn-red    { background: var(--red); color: white; }
+  .btn-ghost  { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  button:hover { opacity: .88; transform: translateY(-1px); }
+  button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 
-    .result-notice {
-        margin-top: 10px; padding: 8px 12px;
-        background: rgba(240,192,64,.08); border: 1px solid rgba(240,192,64,.2);
-        border-radius: 8px; font-size: 13px; color: var(--gold);
-    }
-    .pts-badge {
-        display: inline-block; padding: 2px 9px; border-radius: 999px;
-        font-weight: 700; font-size: 12px;
-        background: var(--green); color: #0b1120;
-    }
-    .pts-badge.zero { background: #374151; color: var(--muted); }
+  /* ── MATCH CARD ── */
+  .match-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px; margin-bottom: 10px;
+    transition: border-color .2s;
+  }
+  .match-item:hover { border-color: #3b4e70; }
+  .match-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .match-teams { font-size: 17px; font-weight: 700; color: var(--heading); }
+  .match-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
 
-    /* ── LEADERBOARD ── */
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
-    th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; background: var(--surface); }
-    .rank-1 { color: var(--gold); font-weight: 700; }
-    .rank-2 { color: #c0c8d8; font-weight: 600; }
-    .rank-3 { color: #cd7c3a; font-weight: 600; }
+  .pill {
+    padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .pill-open   { background: #14532d; color: var(--green); }
+  .pill-locked { background: #450a0a; color: #f87171; }
+  .pill-done   { background: #1e3a5f; color: #93c5fd; }
+  .pill-admin  { background: #422006; color: var(--gold); }
 
-    /* ── LOGIN OVERLAY ── */
-    .overlay {
-        position: fixed; inset: 0; z-index: 999;
-        background: rgba(11,17,32,.97);
-        display: flex; align-items: center; justify-content: center;
-        padding: 20px;
-    }
-    .login-box {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 32px; width: 100%; max-width: 420px;
-        text-align: center;
-    }
-    .login-box .logo { font-size: 36px; margin-bottom: 4px; }
-    .login-box p { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
-    .user-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
-    .user-select-btn {
-        background: var(--surface); border: 1px solid var(--border);
-        border-radius: 10px; padding: 10px 6px;
-        color: var(--text); font-weight: 600; font-size: 12px;
-        cursor: pointer; transition: .15s;
-        display: flex; flex-direction: column; align-items: center; gap: 4px;
-    }
-    .user-select-btn:hover, .user-select-btn.selected { border-color: var(--gold); color: var(--gold); }
-    .user-select-btn .avatar {
-        width: 34px; height: 34px; border-radius: 50%;
-        background: var(--border); display: flex; align-items: center; justify-content: center;
-        font-size: 16px;
-    }
-    .divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--muted); font-size: 12px; }
-    .divider::before, .divider::after { content:''; flex:1; height:1px; background: var(--border); }
+  .score-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .vs { color: var(--muted); font-weight: 700; font-size: 15px; }
 
-    /* ── TOAST ── */
-    .toast {
-        position: fixed; bottom: 24px; right: 24px; z-index: 9999;
-        background: var(--card); border: 1px solid var(--border);
-        border-radius: 10px; padding: 12px 18px;
-        font-size: 13px; font-weight: 600; color: var(--text);
-        transform: translateY(80px); opacity: 0;
-        transition: .3s; pointer-events: none;
-        max-width: 320px;
-    }
-    .toast.show { transform: translateY(0); opacity: 1; }
-    .toast.success { border-color: var(--green); color: var(--green); }
-    .toast.error   { border-color: var(--red);   color: var(--red);   }
+  .result-notice {
+    margin-top: 10px; padding: 8px 12px;
+    background: rgba(240,192,64,.08); border: 1px solid rgba(240,192,64,.2);
+    border-radius: 8px; font-size: 13px; color: var(--gold);
+  }
+  .pts-badge {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-weight: 700; font-size: 12px;
+    background: var(--green); color: #0b1120;
+  }
+  .pts-badge.zero { background: #374151; color: var(--muted); }
 
-    .hidden { display: none !important; }
+  /* ── LEADERBOARD ── */
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; background: var(--surface); }
+  .rank-1 { color: var(--gold); font-weight: 700; }
+  .rank-2 { color: #c0c8d8; font-weight: 600; }
+  .rank-3 { color: #cd7c3a; font-weight: 600; }
 
-    /* ── ADMIN SECTION HEADER ── */
-    .section-label {
-        font-size: 11px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 1px; color: var(--gold); margin-bottom: 10px;
-        padding-bottom: 8px; border-bottom: 1px solid var(--border);
-    }
-    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  /* ── LOGIN OVERLAY ── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(11,17,32,.97);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .login-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px; width: 100%; max-width: 460px;
+    text-align: center;
+  }
+  .login-box .logo { font-size: 36px; margin-bottom: 4px; }
+  .login-box p { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
 
-    /* ── PROFILE ── */
-    .profile-avatar {
-        width: 60px; height: 60px; border-radius: 50%;
-        background: linear-gradient(135deg, var(--gold), #d97706);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 28px; margin: 0 auto 12px;
-    }
+  /* User grid — no avatars, just name buttons */
+  .user-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+  .user-select-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 6px;
+    color: var(--text); font-weight: 600; font-size: 13px;
+    cursor: pointer; transition: .15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .user-select-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(240,192,64,.06); }
 
-    /* ── BONUS ── */
-    .bonus-row {
-        display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-    }
-    .bonus-label { min-width: 80px; color: var(--text); font-size: 13px; font-weight: 600; }
-    </style>
-    </head>
-    <body>
+  .divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--muted); font-size: 12px; }
+  .divider::before, .divider::after { content:''; flex:1; height:1px; background: var(--border); }
 
-    <!-- ── LOGIN OVERLAY ── -->
-    <div class="overlay" id="loginOverlay">
-    <div class="login-box">
-        <div class="logo">⚽ WC 2026<span>PREDICTION LEAGUE</span></div>
-        <p>Select your account to get started</p>
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 18px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    transform: translateY(80px); opacity: 0;
+    transition: .3s; pointer-events: none;
+    max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error   { border-color: var(--red);   color: var(--red);   }
 
-        <div class="user-grid" id="userGrid"></div>
+  .hidden { display: none !important; }
 
-        <!-- <div id="pinSection" class="hidden">
-        <div class="form-group" style="margin-bottom:12px;">
-            <label>Your PIN (4 digits)</label>
-            <input type="password" inputmode="numeric" maxlength="4" id="pinInput" placeholder="••••" style="text-align:center; font-size:22px; letter-spacing:6px;" />
-        </div>
-        <button class="btn-gold" style="width:100%;" id="pinLoginBtn">Enter ⚽</button>
-        </div> -->
+  /* ── ADMIN SECTION HEADER ── */
+  .section-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--gold); margin-bottom: 10px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
 
-        <div class="divider">or</div>
-        <button class="btn-ghost" style="width:100%; font-size:12px;" id="adminLoginShowBtn">Admin Login</button>
+  /* ── BONUS ── */
+  .bonus-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  }
+  .bonus-label { min-width: 80px; color: var(--text); font-size: 13px; font-weight: 600; }
 
-        <div id="adminLoginSection" class="hidden" style="margin-top:12px;">
-        <div class="form-group" style="margin-bottom:10px;">
-            <label>Admin Password</label>
-            <input type="password" id="adminPassInput" placeholder="Enter admin password" />
-        </div>
-        <button class="btn-gold" style="width:100%;" id="adminLoginBtn">Login as Admin</button>
-        <div class="hint" style="margin-top:8px; text-align:center;">Default: <code style="color:var(--gold)">admin2026</code></div>
-        </div>
+  /* ── EDIT SCORE INLINE ── */
+  .match-edit-row {
+    margin-top: 10px; padding: 10px 12px;
+    background: rgba(59,130,246,.07); border: 1px solid rgba(59,130,246,.25);
+    border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .match-edit-row label { color: var(--blue); font-size: 11px; margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN OVERLAY ── -->
+<div class="overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="logo">⚽ WC 2026<span>PREDICTION LEAGUE</span></div>
+    <p>Select your name to jump in</p>
+
+    <div class="user-grid" id="userGrid"></div>
+
+    <div class="divider">or</div>
+    <button class="btn-ghost" style="width:100%; font-size:12px;" id="adminLoginShowBtn">Admin Login</button>
+
+    <div id="adminLoginSection" class="hidden" style="margin-top:12px;">
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>Admin Password</label>
+        <input type="password" id="adminPassInput" placeholder="Enter admin password" />
+      </div>
+      <button class="btn-gold" style="width:100%;" id="adminLoginBtn">Login as Admin</button>
+      <div class="hint" style="margin-top:8px; text-align:center;">Default: <code style="color:var(--gold)">admin2026</code></div>
     </div>
+  </div>
+</div>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="logo">⚽ WC 2026<span>PREDICTION LEAGUE</span></div>
+    <div class="topbar-right">
+      <div class="user-badge" id="userBadge">
+        <div class="dot" id="badgeDot"></div>
+        <span id="badgeName">–</span>
+      </div>
+      <button class="btn-logout" id="topbarLogoutBtn" onclick="logout()">Log Out</button>
     </div>
+  </div>
+</div>
 
-    <!-- ── TOPBAR ── -->
-    <div class="topbar">
-    <div class="topbar-inner">
-        <div class="logo">⚽ WC 2026<span>PREDICTION LEAGUE</span></div>
-        <div class="user-badge" id="userBadge" onclick="openProfile()">
-        <div class="user-badge" id="userBadge" onclick="openProfile()">
-            <div class="dot" id="badgeDot"></div>
-            <span id="badgeName">–</span>
-        </div>
+<!-- ── TABS ── -->
+<div class="tabs">
+  <button class="tab active" data-tab="matches">Matches</button>
+  <button class="tab" data-tab="leaderboard">Leaderboard</button>
+  <button class="tab" data-tab="bonus">Bonus Picks</button>
+  <button class="tab admin-only hidden" data-tab="admin">⚙ Admin</button>
+  <button class="tab" data-tab="rules">Rules</button>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- MATCHES -->
+  <section id="tab-matches" class="tab-panel">
+    <div class="card">
+      <h2>Match Predictions</h2>
+      <div id="matchesList"><div style="color:var(--muted); padding:20px 0;">No matches yet. Admin will add them soon.</div></div>
     </div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section id="tab-leaderboard" class="tab-panel hidden">
+    <div class="card">
+      <h2>Leaderboard</h2>
+      <div id="leaderboardWrap"></div>
     </div>
+  </section>
 
-    <!-- ── TABS ── -->
-    <div class="tabs">
-    <button class="tab active" data-tab="matches">Matches</button>
-    <button class="tab" data-tab="leaderboard">Leaderboard</button>
-    <button class="tab" data-tab="bonus">Bonus Picks</button>
-    <button class="tab admin-only hidden" data-tab="admin">⚙ Admin</button>
-    <button class="tab" data-tab="rules">Rules</button>
+  <!-- BONUS -->
+  <section id="tab-bonus" class="tab-panel hidden">
+    <div class="grid2">
+      <div class="card">
+        <h2>Group Stage Winners</h2>
+        <div class="hint" style="margin-bottom:14px;">+5 pts per correct group winner</div>
+        <div id="groupWinnersForm"></div>
+      </div>
+      <div class="card">
+        <h2>Overall Winner</h2>
+        <div class="hint" style="margin-bottom:14px;">+20 pts for correct World Cup winner</div>
+        <div id="overallWinnerForm"></div>
+      </div>
     </div>
+  </section>
 
-    <!-- ── MAIN ── -->
-    <div class="main">
+  <!-- ADMIN -->
+  <section id="tab-admin" class="tab-panel hidden">
+    <div class="grid2">
 
-    <!-- MATCHES -->
-    <section id="tab-matches" class="tab-panel">
-        <div class="card">
-        <h2>Match Predictions</h2>
-        <div id="matchesList"><div style="color:var(--muted); padding:20px 0;">No matches yet. Admin will add them soon.</div></div>
+      <div class="card">
+        <h2>Add Match</h2>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="form-group">
+            <label>Home Team</label>
+            <input id="homeTeam" placeholder="e.g. Brazil" />
+          </div>
+          <div class="form-group">
+            <label>Away Team</label>
+            <input id="awayTeam" placeholder="e.g. Argentina" />
+          </div>
+          <div class="form-group">
+            <label>Kickoff Time (SGT)</label>
+            <input id="kickoffTime" type="datetime-local" />
+          </div>
+          <div class="form-group">
+            <label>Prediction Deadline (SGT)</label>
+            <input id="deadlineTime" type="datetime-local" />
+            <div class="hint">Default: same as kickoff if blank</div>
+          </div>
+          <div class="form-group">
+            <label>Stage</label>
+            <select id="stage">
+              <option value="group">Group Stage</option>
+              <option value="R16">Round of 16</option>
+              <option value="QF">Quarter-Final</option>
+              <option value="SF">Semi-Final</option>
+              <option value="Final">Final</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Group (if Group Stage)</label>
+            <input id="groupName" placeholder="e.g. Group A" />
+          </div>
+          <button class="btn-gold" id="addMatchBtn">Add Match</button>
         </div>
-    </section>
+      </div>
 
-    <!-- LEADERBOARD -->
-    <section id="tab-leaderboard" class="tab-panel hidden">
-        <div class="card">
-        <h2>Leaderboard</h2>
-        <div id="leaderboardWrap"></div>
-        </div>
-    </section>
-
-    <!-- BONUS -->
-    <section id="tab-bonus" class="tab-panel hidden">
-        <div class="grid2">
-        <div class="card">
-            <h2>Group Stage Winners</h2>
-            <div class="hint" style="margin-bottom:14px;">+5 pts per correct group winner</div>
-            <div id="groupWinnersForm"></div>
-        </div>
-        <div class="card">
-            <h2>Overall Winner</h2>
-            <div class="hint" style="margin-bottom:14px;">+20 pts for correct World Cup winner</div>
-            <div id="overallWinnerForm"></div>
-        </div>
-        </div>
-    </section>
-
-    <!-- ADMIN -->
-    <section id="tab-admin" class="tab-panel hidden">
-        <div class="grid2">
-
-        <div class="card">
-            <h2>Add Match</h2>
-            <div style="display:flex; flex-direction:column; gap:12px;">
-            <div class="form-group">
-                <label>Home Team</label>
-                <input id="homeTeam" placeholder="e.g. Brazil" />
+      <div class="card">
+        <h2>Set / Edit Score</h2>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="form-group">
+            <label>Select Match</label>
+            <select id="resultMatchSelect"><option value="">— select —</option></select>
+          </div>
+          <div id="currentScoreDisplay" class="hint" style="display:none;"></div>
+          <div class="form-group">
+            <label>Score</label>
+            <div class="score-row">
+              <input type="number" min="0" id="resultHome" placeholder="0" />
+              <span class="vs">–</span>
+              <input type="number" min="0" id="resultAway" placeholder="0" />
             </div>
-            <div class="form-group">
-                <label>Away Team</label>
-                <input id="awayTeam" placeholder="e.g. Argentina" />
-            </div>
-            <div class="form-group">
-                <label>Kickoff Time (SGT)</label>
-                <input id="kickoffTime" type="datetime-local" />
-            </div>
-            <div class="form-group">
-                <label>Prediction Deadline (SGT)</label>
-                <input id="deadlineTime" type="datetime-local" />
-                <div class="hint">Default: same as kickoff if blank</div>
-            </div>
-            <div class="form-group">
-                <label>Stage</label>
-                <select id="stage">
-                <option value="group">Group Stage</option>
-                <option value="R16">Round of 16</option>
-                <option value="QF">Quarter-Final</option>
-                <option value="SF">Semi-Final</option>
-                <option value="Final">Final</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Group (if Group Stage)</label>
-                <input id="groupName" placeholder="e.g. Group A" />
-            </div>
-            <button class="btn-gold" id="addMatchBtn">Add Match</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Set Final Score</h2>
-            <div style="display:flex; flex-direction:column; gap:12px;">
-            <div class="form-group">
-                <label>Select Match</label>
-                <select id="resultMatchSelect"><option value="">— select —</option></select>
-            </div>
-            <div class="form-group">
-                <label>Score</label>
-                <div class="score-row">
-                <input type="number" min="0" id="resultHome" placeholder="0" />
-                <span class="vs">–</span>
-                <input type="number" min="0" id="resultAway" placeholder="0" />
-                </div>
-            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn-blue" id="saveResultBtn">Save Score &amp; Recalculate</button>
-            </div>
+            <button class="btn-red" id="clearResultBtn" style="display:none;">Clear Result</button>
+          </div>
         </div>
+      </div>
 
-        <div class="card">
-            <h2>Manage Users</h2>
-            <div id="adminUserList" style="display:flex; flex-direction:column; gap:10px;"></div>
-        </div>
+      <div class="card">
+        <h2>Manage Users</h2>
+        <div id="adminUserList" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
 
-        <div class="card">
-            <h2>Bonus Actuals</h2>
-            <div style="display:flex; flex-direction:column; gap:10px;">
-            <div class="section-label">Actual Group Winners</div>
-            <div id="adminGroupWinners"></div>
-            <button class="btn-blue" id="saveActualGroupsBtn">Save Group Winners</button>
-            <div class="section-label" style="margin-top:8px;">Actual Overall Winner</div>
-            <input id="actualOverallInput" placeholder="Country name" />
-            <button class="btn-blue" id="saveActualOverallBtn">Save Overall Winner</button>
-            </div>
+      <div class="card">
+        <h2>Bonus Actuals</h2>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="section-label">Actual Group Winners</div>
+          <div id="adminGroupWinners"></div>
+          <button class="btn-blue" id="saveActualGroupsBtn">Save Group Winners</button>
+          <div class="section-label" style="margin-top:8px;">Actual Overall Winner</div>
+          <input id="actualOverallInput" placeholder="Country name" />
+          <button class="btn-blue" id="saveActualOverallBtn">Save Overall Winner</button>
         </div>
-
-        </div>
-    </section>
-
-    <!-- RULES -->
-    <section id="tab-rules" class="tab-panel hidden">
-        <div class="card">
-        <h2>How to Play</h2>
-        <div style="display:flex; flex-direction:column; gap:10px; line-height:1.7;">
-            <div>⚽ <strong>Correct exact score</strong> → <span style="color:var(--gold); font-weight:700;">3 pts</span></div>
-            <div>🎯 <strong>Correct goal difference</strong> (but wrong score) → <span style="color:var(--gold); font-weight:700;">2 pts</span></div>
-            <div>✅ <strong>Correct winner / draw</strong> → <span style="color:var(--gold); font-weight:700;">1 pt</span></div>
-            <div>🏆 <strong>Correct group stage winner</strong> → <span style="color:var(--gold); font-weight:700;">5 pts</span> per group</div>
-            <div>🥇 <strong>Correct overall World Cup winner</strong> → <span style="color:var(--gold); font-weight:700;">20 pts</span></div>
-            <div style="color:var(--muted); font-size:13px; margin-top:6px;">Predictions lock at the deadline set by admin (default: kickoff time). All times are Singapore Time (GMT+8).</div>
-        </div>
-        </div>
-    </section>
+      </div>
 
     </div>
 
-    <!-- ── PROFILE MODAL ── -->
-    <div class="overlay hidden" id="profileOverlay" style="z-index:200;" onclick="closeProfile(event)">
-    <div class="login-box" onclick="event.stopPropagation()">
-        <div class="profile-avatar" id="profileAvatar">👤</div>
-        <div style="font-weight:700; font-size:18px; margin-bottom:4px;" id="profileTitle">My Profile</div>
-        <div style="color:var(--muted); font-size:12px; margin-bottom:20px;" id="profileSubtitle"></div>
-        <div class="form-group" style="margin-bottom:12px; text-align:left;">
-        <label>Display Name</label>
-        <input id="profileNameInput" placeholder="Enter your name" />
-        </div>
-        <div id="profilePinSection" class="form-group" style="margin-bottom:16px; text-align:left;">
-        <label>Change PIN (4 digits, leave blank to keep)</label>
-        <input type="password" inputmode="numeric" maxlength="4" id="profilePinInput" placeholder="New PIN" />
-        </div>
-        <div style="display:flex; gap:8px;">
-        <button class="btn-gold" style="flex:1;" id="saveProfileBtn">Save Changes</button>
-        <button class="btn-ghost" onclick="logout()">Log Out</button>
-        </div>
-    </div>
+    <!-- Match list with inline edit -->
+    <div class="card" style="margin-top:0;">
+      <h2>All Matches</h2>
+      <div id="adminMatchList"></div>
     </div>
 
-    <!-- ── TOAST ── -->
-    <div class="toast" id="toast"></div>
+  </section>
 
-    <script>
-    // ════════════════════════════════════════════════════════════
-    //  STATE  (localStorage-backed, no Firebase dependency)
-    // ════════════════════════════════════════════════════════════
+  <!-- RULES -->
+  <section id="tab-rules" class="tab-panel hidden">
+    <div class="card">
+      <h2>How to Play</h2>
+      <div style="display:flex; flex-direction:column; gap:10px; line-height:1.7;">
+        <div>⚽ <strong>Correct exact score</strong> → <span style="color:var(--gold); font-weight:700;">3 pts</span></div>
+        <div>🎯 <strong>Correct goal difference</strong> (but wrong score) → <span style="color:var(--gold); font-weight:700;">2 pts</span></div>
+        <div>✅ <strong>Correct winner / draw</strong> → <span style="color:var(--gold); font-weight:700;">1 pt</span></div>
+        <div>🏆 <strong>Correct group stage winner</strong> → <span style="color:var(--gold); font-weight:700;">5 pts</span> per group</div>
+        <div>🥇 <strong>Correct overall World Cup winner</strong> → <span style="color:var(--gold); font-weight:700;">20 pts</span></div>
+        <div style="color:var(--muted); font-size:13px; margin-top:6px;">Predictions lock at the deadline set by admin (default: kickoff time). All times are Singapore Time (GMT+8).</div>
+      </div>
+    </div>
+  </section>
 
-    const ADMIN_PASS   = "admin2026";
-    const GROUPS       = ["Group A","Group B","Group C","Group D","Group E","Group F",
-                        "Group G","Group H","Group I","Group J","Group K","Group L"];
-    const USER_EMOJIS  = ["🦁","🐯","🦊","🐺","🦅","🐬","🦄","🐉"];
+</div>
 
-    function load(key, def) {
-    try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════
+
+const ADMIN_PASS   = "admin2026";
+const GROUPS       = ["Group A","Group B","Group C","Group D","Group E","Group F",
+                      "Group G","Group H","Group I","Group J","Group K","Group L"];
+const USER_EMOJIS  = ["🦁","🐯","🦊","🐺","🦅","🐬","🦄","🐉"];
+
+function load(key, def) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
+}
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+function initUsers() {
+  let users = load("wc_users", null);
+  if (!users) {
+    users = {};
+    for (let i = 1; i <= 8; i++) {
+      const id = `user${i}`;
+      users[id] = { id, displayName: `Player ${i}`, emoji: USER_EMOJIS[i-1] };
     }
-    function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+    save("wc_users", users);
+  }
+  return users;
+}
 
-    // ── Seed default users if first run ──
-    function initUsers() {
-    let users = load("wc_users", null);
-    if (!users) {
-        users = {};
-        for (let i = 1; i <= 8; i++) {
-        const id = `user${i}`;
-        users[id] = { id, displayName: `Player ${i}`, pin: `000${i}`.slice(-4), emoji: USER_EMOJIS[i-1] };
-        }
-        save("wc_users", users);
-    }
-    return users;
-    }
+let state = {
+  users:       initUsers(),
+  matches:     load("wc_matches", []),
+  predictions: load("wc_preds",   {}),
+  bonus:       load("wc_bonus",   {}),
+  settings:    load("wc_settings",{ actualGroupWinners:{}, actualOverallWinner:"" }),
+  session:     load("wc_session", null),
+};
 
-    let state = {
-    users:       initUsers(),
-    matches:     load("wc_matches", []),
-    predictions: load("wc_preds",   {}),   // {userId: {matchId: {home,away,pts}}}
-    bonus:       load("wc_bonus",   {}),   // {userId: {groupWinners:{}, overallWinner:""}}
-    settings:    load("wc_settings",{ actualGroupWinners:{}, actualOverallWinner:"" }),
-    session:     load("wc_session", null), // {userId, isAdmin}
-    };
+function persist() {
+  save("wc_matches",  state.matches);
+  save("wc_preds",    state.predictions);
+  save("wc_bonus",    state.bonus);
+  save("wc_settings", state.settings);
+  save("wc_users",    state.users);
+  save("wc_session",  state.session);
+}
 
-    function persist() {
-    save("wc_matches",  state.matches);
-    save("wc_preds",    state.predictions);
-    save("wc_bonus",    state.bonus);
-    save("wc_settings", state.settings);
-    save("wc_users",    state.users);
-    save("wc_session",  state.session);
-    }
+// ════════════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════════════
 
-    // ════════════════════════════════════════════════════════════
-    //  HELPERS
-    // ════════════════════════════════════════════════════════════
+function toast(msg, type="success") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `toast ${type}`;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 3000);
+}
 
-    function toast(msg, type="success") {
-    const el = document.getElementById("toast");
-    el.textContent = msg;
-    el.className = `toast ${type}`;
-    el.classList.add("show");
-    setTimeout(() => el.classList.remove("show"), 3000);
-    }
+function fmtSGT(iso) {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("en-SG", {
+    timeZone:"Asia/Singapore", year:"numeric", month:"short",
+    day:"numeric", hour:"2-digit", minute:"2-digit"
+  }).format(new Date(iso));
+}
 
-    function fmtSGT(iso) {
-    if (!iso) return "—";
-    return new Intl.DateTimeFormat("en-SG", {
-        timeZone:"Asia/Singapore", year:"numeric", month:"short",
-        day:"numeric", hour:"2-digit", minute:"2-digit"
-    }).format(new Date(iso));
-    }
+function isLocked(match) {
+  const deadline = match.deadline || match.kickoffTime;
+  return deadline && new Date() >= new Date(deadline);
+}
 
-    function isLocked(match) {
-    const deadline = match.deadline || match.kickoffTime;
-    return deadline && new Date() >= new Date(deadline);
-    }
+function outcome(h, a) { return h > a ? "home" : a > h ? "away" : "draw"; }
 
-    function outcome(h, a) { return h > a ? "home" : a > h ? "away" : "draw"; }
+function calcPts(ph, pa, ah, aa) {
+  if (ph === ah && pa === aa) return 3;
+  if ((ph - pa) === (ah - aa)) return 2;
+  if (outcome(ph, pa) === outcome(ah, aa)) return 1;
+  return 0;
+}
 
-    function calcPts(ph, pa, ah, aa) {
-    if (ph === ah && pa === aa) return 3;
-    if ((ph - pa) === (ah - aa)) return 2;
-    if (outcome(ph, pa) === outcome(ah, aa)) return 1;
-    return 0;
-    }
+function currentUser() {
+  if (!state.session) return null;
+  if (state.session.isAdmin) return { id:"admin", displayName:"Admin", isAdmin:true, emoji:"⚙️" };
+  return state.users[state.session.userId] || null;
+}
 
-    function currentUser() {
-    if (!state.session) return null;
-    if (state.session.isAdmin) return { id:"admin", displayName:"Admin", isAdmin:true, emoji:"⚙️" };
-    return state.users[state.session.userId] || null;
-    }
+// ════════════════════════════════════════════════════════════
+//  RECALCULATE
+// ════════════════════════════════════════════════════════════
 
-    // ════════════════════════════════════════════════════════════
-    //  RECALCULATE SCORES
-    // ════════════════════════════════════════════════════════════
+function recalcAll() {
+  for (const uid of Object.keys(state.users)) {
+    let matchPts = 0, bonusPts = 0;
 
-    function recalcAll() {
-    for (const uid of Object.keys(state.users)) {
-        let matchPts = 0, bonusPts = 0;
-
-        // match predictions
-        const userPreds = state.predictions[uid] || {};
-        for (const match of state.matches) {
-        if (!match.completed) continue;
-        const pred = userPreds[match.id];
-        if (!pred) continue;
-        const pts = calcPts(
-            Number(pred.home), Number(pred.away),
-            Number(match.resultHome), Number(match.resultAway)
-        );
-        pred.pts = pts;
-        matchPts += pts;
-        }
-
-        // bonus
-        const bp = state.bonus[uid] || {};
-        const agw = state.settings.actualGroupWinners || {};
-        const pgw = bp.groupWinners || {};
-        for (const g of GROUPS) {
-        if (agw[g] && pgw[g] && agw[g].trim().toLowerCase() === pgw[g].trim().toLowerCase()) bonusPts += 5;
-        }
-        const aow = state.settings.actualOverallWinner || "";
-        const pow = (bp.overallWinner || "").trim().toLowerCase();
-        if (aow && pow && aow.trim().toLowerCase() === pow) bonusPts += 20;
-
-        state.users[uid].matchPts  = matchPts;
-        state.users[uid].bonusPts  = bonusPts;
-        state.users[uid].totalPts  = matchPts + bonusPts;
-    }
-    persist();
-    }
-
-    // ════════════════════════════════════════════════════════════
-    //  RENDER
-    // ════════════════════════════════════════════════════════════
-
-    function renderAll() {
-    const u = currentUser();
-
-    // topbar
-    if (u) {
-        document.getElementById("badgeName").textContent = u.displayName;
-        const dot = document.getElementById("badgeDot");
-        dot.className = "dot" + (u.isAdmin ? " admin" : "");
-    }
-
-    // admin tab visibility
-    document.querySelectorAll(".admin-only").forEach(el => {
-        el.classList.toggle("hidden", !(u && u.isAdmin));
-    });
-
-    renderMatches();
-    renderLeaderboard();
-    renderBonus();
-    if (u && u.isAdmin) { renderAdmin(); }
-    }
-
-    // ── MATCHES ──
-    function renderMatches() {
-    const wrap = document.getElementById("matchesList");
-    const u    = currentUser();
-
-    if (!state.matches.length) {
-        wrap.innerHTML = '<div style="color:var(--muted); padding:20px 0;">No matches yet. Admin will add them soon.</div>';
-        return;
-    }
-
-    wrap.innerHTML = "";
-    [...state.matches]
-        .sort((a,b) => new Date(a.kickoffTime) - new Date(b.kickoffTime))
-        .forEach(match => {
-        const locked = isLocked(match);
-        const userPred = u && !u.isAdmin ? (state.predictions[u.id]?.[match.id] || null) : null;
-
-        const pill = match.completed
-            ? `<span class="pill pill-done">Result In</span>`
-            : locked
-            ? `<span class="pill pill-locked">Locked</span>`
-            : `<span class="pill pill-open">Open</span>`;
-
-        const stageLabel = match.stage === "group"
-            ? `${match.stage.toUpperCase()}${match.groupName ? " · "+match.groupName : ""}`
-            : match.stage;
-
-        let predHtml = "";
-        if (!u) {
-            predHtml = `<div class="hint" style="margin-top:10px;">Log in to predict.</div>`;
-        } else if (u.isAdmin) {
-            predHtml = `<div class="hint" style="margin-top:10px; color:var(--gold);">Admin view — all user predictions below.</div>`;
-            // show all predictions
-            const allPreds = Object.entries(state.predictions)
-            .filter(([,mp]) => mp[match.id])
-            .map(([uid, mp]) => {
-                const usr = state.users[uid];
-                const p = mp[match.id];
-                return `<span style="font-size:12px; color:var(--muted);">${usr?.displayName||uid}: <strong style="color:var(--text);">${p.home}–${p.away}</strong>${match.completed ? ` <span class="pts-badge ${p.pts===0?'zero':''}">${p.pts}pt${p.pts!==1?'s':''}</span>` : ''}</span>`;
-            }).join("  &bull;  ");
-            if (allPreds) predHtml += `<div style="margin-top:8px; line-height:2;">${allPreds}</div>`;
-        } else {
-            if (locked) {
-            predHtml = userPred
-                ? `<div class="hint" style="margin-top:10px;">Your pick: <strong style="color:var(--text);">${userPred.home} – ${userPred.away}</strong></div>`
-                : `<div class="hint" style="margin-top:10px;">No prediction submitted before deadline.</div>`;
-            } else {
-            predHtml = `
-                <div class="score-row" style="margin-top:12px;">
-                <input type="number" min="0" id="ph-${match.id}" value="${userPred?.home??""}" placeholder="0" />
-                <span class="vs">–</span>
-                <input type="number" min="0" id="pa-${match.id}" value="${userPred?.away??""}" placeholder="0" />
-                <button class="btn-green" data-save="${match.id}">Save Pick</button>
-                </div>`;
-            }
-        }
-
-        let resultHtml = "";
-        if (match.completed) {
-            const ptsLine = userPred && !u?.isAdmin
-            ? ` · Your points: <span class="pts-badge ${userPred.pts===0?'zero':''}">${userPred.pts??0}pt${userPred.pts!==1?'s':''}</span>`
-            : "";
-            resultHtml = `<div class="result-notice">⚽ Final: <strong>${match.homeTeam} ${match.resultHome} – ${match.resultAway} ${match.awayTeam}</strong>${ptsLine}</div>`;
-        }
-
-        const div = document.createElement("div");
-        div.className = "match-item";
-        div.innerHTML = `
-            <div class="match-header">
-            <div>
-                <div class="match-teams">${match.homeTeam} <span style="color:var(--muted);">vs</span> ${match.awayTeam}</div>
-                <div class="match-meta">⏰ Kickoff: ${fmtSGT(match.kickoffTime)} &nbsp;·&nbsp; 🔒 Deadline: ${fmtSGT(match.deadline||match.kickoffTime)} &nbsp;·&nbsp; ${stageLabel}</div>
-            </div>
-            <div>${pill}</div>
-            </div>
-            ${predHtml}
-            ${resultHtml}
-        `;
-        wrap.appendChild(div);
-        });
-
-    // attach save listeners
-    document.querySelectorAll("[data-save]").forEach(btn => {
-        btn.addEventListener("click", () => {
-        const mid  = btn.getAttribute("data-save");
-        const home = document.getElementById(`ph-${mid}`).value;
-        const away = document.getElementById(`pa-${mid}`).value;
-        if (home==="" || away==="") { toast("Enter both scores.", "error"); return; }
-        savePrediction(mid, home, away);
-        });
-    });
-    }
-
-    // ── LEADERBOARD ──
-    function renderLeaderboard() {
-    const wrap = document.getElementById("leaderboardWrap");
-    const rows = Object.values(state.users)
-        .sort((a,b) => (b.totalPts||0)-(a.totalPts||0) || a.displayName.localeCompare(b.displayName));
-
-    if (!rows.length) { wrap.innerHTML = '<div style="color:var(--muted);">No data yet.</div>'; return; }
-
-    const cls = (i) => i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":"";
-    const medal = (i) => i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
-
-    wrap.innerHTML = `
-        <table>
-        <thead><tr>
-            <th>#</th><th>Player</th><th>Match Pts</th><th>Bonus Pts</th><th>Total</th>
-        </tr></thead>
-        <tbody>
-            ${rows.map((u,i) => `
-            <tr>
-                <td class="${cls(i)}">${medal(i)||i+1}</td>
-                <td class="${cls(i)}">${u.emoji||"👤"} ${u.displayName}</td>
-                <td>${u.matchPts||0}</td>
-                <td>${u.bonusPts||0}</td>
-                <td><strong style="color:var(--gold);">${u.totalPts||0}</strong></td>
-            </tr>`).join("")}
-        </tbody>
-        </table>`;
-    }
-
-    // ── BONUS ──
-    function renderBonus() {
-    const u = currentUser();
-    if (!u || u.isAdmin) {
-        document.getElementById("groupWinnersForm").innerHTML = '<div class="hint">Log in as a user to submit bonus picks.</div>';
-        document.getElementById("overallWinnerForm").innerHTML = '';
-        return;
-    }
-    const bp = state.bonus[u.id] || { groupWinners:{}, overallWinner:"" };
-    const locked = false; // bonus picks always open until admin decides
-
-    const groupHtml = GROUPS.map(g => `
-        <div class="bonus-row">
-        <div class="bonus-label">${g}</div>
-        <input style="flex:1;" id="bg-${g.replace(" ","-")}" value="${bp.groupWinners?.[g]||""}" placeholder="Team…" />
-        </div>`).join("") + `<button class="btn-gold" style="margin-top:10px;" id="saveBonusGroupsBtn">Save Group Picks</button>`;
-
-    document.getElementById("groupWinnersForm").innerHTML = groupHtml;
-
-    document.getElementById("overallWinnerForm").innerHTML = `
-        <div class="form-group" style="margin-bottom:12px;">
-        <label>World Cup Winner</label>
-        <input id="overallPick" value="${bp.overallWinner||""}" placeholder="e.g. Brazil" />
-        </div>
-        <button class="btn-gold" id="saveBonusOverallBtn">Save Overall Pick</button>`;
-
-    document.getElementById("saveBonusGroupsBtn").addEventListener("click", () => {
-        if (!u) return;
-        const gw = {};
-        GROUPS.forEach(g => { gw[g] = document.getElementById(`bg-${g.replace(" ","-")}`).value.trim(); });
-        if (!state.bonus[u.id]) state.bonus[u.id] = {};
-        state.bonus[u.id].groupWinners = gw;
-        recalcAll();
-        toast("Group picks saved!", "success");
-        renderBonus();
-    });
-
-    document.getElementById("saveBonusOverallBtn").addEventListener("click", () => {
-        if (!u) return;
-        const ow = document.getElementById("overallPick").value.trim();
-        if (!state.bonus[u.id]) state.bonus[u.id] = {};
-        state.bonus[u.id].overallWinner = ow;
-        recalcAll();
-        toast("Overall winner pick saved!", "success");
-    });
-    }
-
-    // ── ADMIN ──
-    function renderAdmin() {
-    // result match select
-    const sel = document.getElementById("resultMatchSelect");
-    sel.innerHTML = '<option value="">— select —</option>' +
-        [...state.matches]
-        .sort((a,b)=>new Date(a.kickoffTime)-new Date(b.kickoffTime))
-        .map(m=>`<option value="${m.id}">${m.homeTeam} vs ${m.awayTeam} — ${fmtSGT(m.kickoffTime)}</option>`)
-        .join("");
-
-    // user management
-    const ul = document.getElementById("adminUserList");
-    ul.innerHTML = Object.values(state.users).map(u => `
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--surface); padding:10px 12px; border-radius:8px; border:1px solid var(--border);">
-        <span style="font-size:18px;">${u.emoji}</span>
-        <div style="flex:1; min-width:80px;">
-            <div style="font-weight:700; font-size:13px;">${u.displayName}</div>
-            <div class="hint">${u.id} · PIN: ${u.pin} · ${u.totalPts||0} pts</div>
-        </div>
-        <input style="width:120px;" id="admin-name-${u.id}" value="${u.displayName}" placeholder="Name" />
-        <input style="width:70px;" id="admin-pin-${u.id}" value="${u.pin}" maxlength="4" placeholder="PIN" />
-        <button class="btn-ghost" style="font-size:12px;" data-admin-save-user="${u.id}">Save</button>
-        </div>`).join("");
-
-    ul.querySelectorAll("[data-admin-save-user]").forEach(btn => {
-        btn.addEventListener("click", () => {
-        const uid = btn.getAttribute("data-admin-save-user");
-        state.users[uid].displayName = document.getElementById(`admin-name-${uid}`).value.trim() || state.users[uid].displayName;
-        const pin = document.getElementById(`admin-pin-${uid}`).value.trim();
-        if (/^\d{4}$/.test(pin)) state.users[uid].pin = pin;
-        persist();
-        toast(`${state.users[uid].displayName} updated.`, "success");
-        renderAdmin(); renderLeaderboard();
-        });
-    });
-
-    // bonus actuals
-    const agw = document.getElementById("adminGroupWinners");
-    agw.innerHTML = GROUPS.map(g => `
-        <div class="bonus-row" style="margin-bottom:6px;">
-        <div class="bonus-label">${g}</div>
-        <input style="flex:1;" id="agw-${g.replace(" ","-")}" value="${state.settings.actualGroupWinners?.[g]||""}" placeholder="Team…" />
-        </div>`).join("");
-
-    document.getElementById("actualOverallInput").value = state.settings.actualOverallWinner || "";
-
-    document.getElementById("saveActualGroupsBtn").onclick = () => {
-        const gw = {};
-        GROUPS.forEach(g => { gw[g] = document.getElementById(`agw-${g.replace(" ","-")}`).value.trim(); });
-        state.settings.actualGroupWinners = gw;
-        recalcAll(); renderLeaderboard();
-        toast("Actual group winners saved.", "success");
-    };
-    document.getElementById("saveActualOverallBtn").onclick = () => {
-        state.settings.actualOverallWinner = document.getElementById("actualOverallInput").value.trim();
-        recalcAll(); renderLeaderboard();
-        toast("Actual overall winner saved.", "success");
-    };
-    }
-
-    // ════════════════════════════════════════════════════════════
-    //  ACTIONS
-    // ════════════════════════════════════════════════════════════
-
-    function savePrediction(matchId, home, away) {
-    const u = currentUser();
-    if (!u || u.isAdmin) return;
-    const match = state.matches.find(m=>m.id===matchId);
-    if (!match || isLocked(match)) { toast("Deadline passed!", "error"); return; }
-    if (!state.predictions[u.id]) state.predictions[u.id] = {};
-    state.predictions[u.id][matchId] = { home: Math.max(0,Number(home)), away: Math.max(0,Number(away)), pts: 0 };
-    if (match.completed) {
-        state.predictions[u.id][matchId].pts = calcPts(
-        Math.max(0,Number(home)), Math.max(0,Number(away)),
+    const userPreds = state.predictions[uid] || {};
+    for (const match of state.matches) {
+      if (!match.completed) continue;
+      const pred = userPreds[match.id];
+      if (!pred) continue;
+      const pts = calcPts(
+        Number(pred.home), Number(pred.away),
         Number(match.resultHome), Number(match.resultAway)
-        );
-    }
-    recalcAll();
-    toast("Prediction saved! ⚽", "success");
-    renderMatches(); renderLeaderboard();
+      );
+      pred.pts = pts;
+      matchPts += pts;
     }
 
-    // ════════════════════════════════════════════════════════════
-    //  LOGIN / LOGOUT / PROFILE
-    // ════════════════════════════════════════════════════════════
-
-    let loginSelectedUser = null;
-
-    function buildLoginGrid() {
-    const grid = document.getElementById("userGrid");
-    grid.innerHTML = Object.values(state.users).map(u => `
-        <div class="user-select-btn" data-uid="${u.id}">
-        <div class="avatar">${u.emoji}</div>
-        <div>${u.displayName}</div>
-        </div>`).join("");
-
-    grid.querySelectorAll(".user-select-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-        grid.querySelectorAll(".user-select-btn").forEach(b=>b.classList.remove("selected"));
-        btn.classList.add("selected");
-        loginSelectedUser = btn.getAttribute("data-uid");
-        document.getElementById("pinSection").classList.remove("hidden");
-        document.getElementById("adminLoginSection").classList.add("hidden");
-        document.getElementById("pinInput").value = "";
-        document.getElementById("pinInput").focus();
-        });
-    });
+    const bp = state.bonus[uid] || {};
+    const agw = state.settings.actualGroupWinners || {};
+    const pgw = bp.groupWinners || {};
+    for (const g of GROUPS) {
+      if (agw[g] && pgw[g] && agw[g].trim().toLowerCase() === pgw[g].trim().toLowerCase()) bonusPts += 5;
     }
+    const aow = state.settings.actualOverallWinner || "";
+    const pow = (bp.overallWinner || "").trim().toLowerCase();
+    if (aow && pow && aow.trim().toLowerCase() === pow) bonusPts += 20;
 
-    document.getElementById("adminLoginShowBtn").addEventListener("click", () => {
-    const s = document.getElementById("adminLoginSection");
-    s.classList.toggle("hidden");
-    document.getElementById("pinSection").classList.add("hidden");
-    loginSelectedUser = null;
-    document.querySelectorAll(".user-select-btn").forEach(b=>b.classList.remove("selected"));
-    });
+    state.users[uid].matchPts  = matchPts;
+    state.users[uid].bonusPts  = bonusPts;
+    state.users[uid].totalPts  = matchPts + bonusPts;
+  }
+  persist();
+}
 
-    document.getElementById("adminLoginBtn").addEventListener("click", () => {
-    const pass = document.getElementById("adminPassInput").value;
-    if (pass === ADMIN_PASS) {
-        state.session = { isAdmin: true };
-        persist();
-        document.getElementById("loginOverlay").classList.add("hidden");
-        renderAll();
-        toast("Welcome, Admin! ⚙️", "success");
-    } else {
-        toast("Wrong password.", "error");
-    }
-    });
+// ════════════════════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════════════════════
 
-    document.getElementById("pinLoginBtn").addEventListener("click", () => {
-    if (!loginSelectedUser) { toast("Select a user first.", "error"); return; }
-    const pin = document.getElementById("pinInput").value;
-    const user = state.users[loginSelectedUser];
-    if (user) {
-        state.session = { userId: loginSelectedUser, isAdmin: false };
-        persist();
-        document.getElementById("loginOverlay").classList.add("hidden");
-        renderAll();
-        toast(`Welcome back, ${user.displayName}! 🎉`, "success");
-    } else {
-        toast("Wrong PIN.", "error");
-    }
-    });
+function renderAll() {
+  const u = currentUser();
 
-    document.getElementById("pinInput").addEventListener("keydown", e => {
-    if (e.key==="Enter") document.getElementById("pinLoginBtn").click();
-    });
+  if (u) {
+    document.getElementById("badgeName").textContent = u.displayName;
+    const dot = document.getElementById("badgeDot");
+    dot.className = "dot" + (u.isAdmin ? " admin" : "");
+  }
 
-    function logout() {
-    state.session = null;
-    persist();
-    closeProfile();
-    document.getElementById("loginOverlay").classList.remove("hidden");
-    buildLoginGrid();
-    }
+  document.querySelectorAll(".admin-only").forEach(el => {
+    el.classList.toggle("hidden", !(u && u.isAdmin));
+  });
 
-    function openProfile() {
-    const u = currentUser();
-    if (!u) return;
-    if (u.isAdmin) { toast("Admin profile — change password in code.", "error"); return; }
-    document.getElementById("profileAvatar").textContent = u.emoji || "👤";
-    document.getElementById("profileTitle").textContent  = u.displayName;
-    document.getElementById("profileSubtitle").textContent = u.id;
-    document.getElementById("profileNameInput").value = u.displayName;
-    document.getElementById("profilePinInput").value  = "";
-    document.getElementById("profileOverlay").classList.remove("hidden");
-    }
+  renderMatches();
+  renderLeaderboard();
+  renderBonus();
+  if (u && u.isAdmin) { renderAdmin(); }
+}
 
-    function closeProfile(e) {
-    if (!e || e.target === document.getElementById("profileOverlay")) {
-        document.getElementById("profileOverlay").classList.add("hidden");
-    }
-    }
+// ── MATCHES ──
+function renderMatches() {
+  const wrap = document.getElementById("matchesList");
+  const u    = currentUser();
 
-    document.getElementById("saveProfileBtn").addEventListener("click", () => {
-    const u = currentUser();
-    if (!u || u.isAdmin) return;
-    const name = document.getElementById("profileNameInput").value.trim();
-    const pin  = document.getElementById("profilePinInput").value.trim();
-    if (name) state.users[u.id].displayName = name;
-    if (/^\d{4}$/.test(pin)) state.users[u.id].pin = pin;
-    else if (pin) { toast("PIN must be 4 digits.", "error"); return; }
-    persist();
-    toast("Profile updated!", "success");
-    closeProfile();
-    renderAll();
-    });
+  if (!state.matches.length) {
+    wrap.innerHTML = '<div style="color:var(--muted); padding:20px 0;">No matches yet. Admin will add them soon.</div>';
+    return;
+  }
 
-    // ════════════════════════════════════════════════════════════
-    //  ADMIN ACTIONS
-    // ════════════════════════════════════════════════════════════
+  wrap.innerHTML = "";
+  [...state.matches]
+    .sort((a,b) => new Date(a.kickoffTime) - new Date(b.kickoffTime))
+    .forEach(match => {
+      const locked = isLocked(match);
+      const userPred = u && !u.isAdmin ? (state.predictions[u.id]?.[match.id] || null) : null;
 
-    document.getElementById("addMatchBtn").addEventListener("click", () => {
-    const home    = document.getElementById("homeTeam").value.trim();
-    const away    = document.getElementById("awayTeam").value.trim();
-    const kickoff = document.getElementById("kickoffTime").value;
-    const deadline= document.getElementById("deadlineTime").value;
-    const stage   = document.getElementById("stage").value;
-    const group   = document.getElementById("groupName").value.trim();
+      const pill = match.completed
+        ? `<span class="pill pill-done">Result In</span>`
+        : locked
+          ? `<span class="pill pill-locked">Locked</span>`
+          : `<span class="pill pill-open">Open</span>`;
 
-    if (!home || !away || !kickoff) { toast("Fill in home team, away team and kickoff time.", "error"); return; }
+      const stageLabel = match.stage === "group"
+        ? `GROUP STAGE${match.groupName ? " · "+match.groupName : ""}`
+        : match.stage;
 
-    const id = `m${Date.now()}`;
-    state.matches.push({
-        id, homeTeam: home, awayTeam: away,
-        kickoffTime: new Date(kickoff).toISOString(),
-        deadline:    deadline ? new Date(deadline).toISOString() : new Date(kickoff).toISOString(),
-        stage,
-        groupName:   stage==="group" ? group : "",
-        completed:   false,
-        resultHome:  null, resultAway: null
-    });
-    persist();
-    toast("Match added! ✅", "success");
-    // clear
-    ["homeTeam","awayTeam","kickoffTime","deadlineTime","groupName"].forEach(id => document.getElementById(id).value="");
-    renderAll();
-    });
+      let predHtml = "";
+      if (!u) {
+        predHtml = `<div class="hint" style="margin-top:10px;">Log in to predict.</div>`;
+      } else if (u.isAdmin) {
+        predHtml = `<div class="hint" style="margin-top:10px; color:var(--gold);">Admin view — all user predictions below.</div>`;
+        const allPreds = Object.entries(state.predictions)
+          .filter(([,mp]) => mp[match.id])
+          .map(([uid, mp]) => {
+            const usr = state.users[uid];
+            const p = mp[match.id];
+            return `<span style="font-size:12px; color:var(--muted);">${usr?.displayName||uid}: <strong style="color:var(--text);">${p.home}–${p.away}</strong>${match.completed ? ` <span class="pts-badge ${p.pts===0?'zero':''}">${p.pts}pt${p.pts!==1?'s':''}</span>` : ''}</span>`;
+          }).join("  &bull;  ");
+        if (allPreds) predHtml += `<div style="margin-top:8px; line-height:2;">${allPreds}</div>`;
 
-    document.getElementById("saveResultBtn").addEventListener("click", () => {
-    const mid  = document.getElementById("resultMatchSelect").value;
-    const home = document.getElementById("resultHome").value;
-    const away = document.getElementById("resultAway").value;
-    if (!mid || home==="" || away==="") { toast("Select a match and enter scores.", "error"); return; }
-    const match = state.matches.find(m=>m.id===mid);
-    if (!match) return;
-    match.resultHome = Math.max(0, Number(home));
-    match.resultAway = Math.max(0, Number(away));
-    match.completed  = true;
-    recalcAll();
-    toast("Result saved & scores updated! 🏆", "success");
-    renderAll();
-    });
-
-    // ════════════════════════════════════════════════════════════
-    //  TABS
-    // ════════════════════════════════════════════════════════════
-
-    document.querySelectorAll(".tab").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
-        btn.classList.add("active");
-        const tab = btn.getAttribute("data-tab");
-        document.querySelectorAll(".tab-panel").forEach(p=>p.classList.add("hidden"));
-        document.getElementById(`tab-${tab}`).classList.remove("hidden");
-    });
-    });
-
-    // ════════════════════════════════════════════════════════════
-    //  INIT
-    // ════════════════════════════════════════════════════════════
-
-    (function init() {
-    buildLoginGrid();
-    if (state.session) {
-        // validate session still valid
-        if (!state.session.isAdmin && !state.users[state.session.userId]) {
-        state.session = null; persist();
+        // Admin inline score edit
+        predHtml += `
+          <div class="match-edit-row">
+            <span style="font-size:11px; color:var(--blue); font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Edit Score:</span>
+            <input type="number" min="0" id="eis-h-${match.id}" value="${match.resultHome??''}" placeholder="H" style="width:60px;" />
+            <span class="vs" style="font-size:13px;">–</span>
+            <input type="number" min="0" id="eis-a-${match.id}" value="${match.resultAway??''}" placeholder="A" style="width:60px;" />
+            <button class="btn-blue" style="padding:6px 12px; font-size:12px;" data-inline-save="${match.id}">${match.completed ? 'Update' : 'Set'} Score</button>
+            ${match.completed ? `<button class="btn-red" style="padding:6px 12px; font-size:12px;" data-inline-clear="${match.id}">Clear</button>` : ''}
+          </div>`;
+      } else {
+        if (locked) {
+          predHtml = userPred
+            ? `<div class="hint" style="margin-top:10px;">Your pick: <strong style="color:var(--text);">${userPred.home} – ${userPred.away}</strong></div>`
+            : `<div class="hint" style="margin-top:10px;">No prediction submitted before deadline.</div>`;
+        } else {
+          predHtml = `
+            <div class="score-row" style="margin-top:12px;">
+              <input type="number" min="0" id="ph-${match.id}" value="${userPred?.home??""}" placeholder="0" />
+              <span class="vs">–</span>
+              <input type="number" min="0" id="pa-${match.id}" value="${userPred?.away??""}" placeholder="0" />
+              <button class="btn-green" data-save="${match.id}">Save Pick</button>
+            </div>`;
         }
-    }
-    if (!state.session) {
-        document.getElementById("loginOverlay").classList.remove("hidden");
+      }
+
+      let resultHtml = "";
+      if (match.completed) {
+        const ptsLine = userPred && !u?.isAdmin
+          ? ` · Your points: <span class="pts-badge ${userPred.pts===0?'zero':''}">${userPred.pts??0}pt${userPred.pts!==1?'s':''}</span>`
+          : "";
+        resultHtml = `<div class="result-notice">⚽ Final: <strong>${match.homeTeam} ${match.resultHome} – ${match.resultAway} ${match.awayTeam}</strong>${ptsLine}</div>`;
+      }
+
+      const div = document.createElement("div");
+      div.className = "match-item";
+      div.innerHTML = `
+        <div class="match-header">
+          <div>
+            <div class="match-teams">${match.homeTeam} <span style="color:var(--muted);">vs</span> ${match.awayTeam}</div>
+            <div class="match-meta">⏰ Kickoff: ${fmtSGT(match.kickoffTime)} &nbsp;·&nbsp; 🔒 Deadline: ${fmtSGT(match.deadline||match.kickoffTime)} &nbsp;·&nbsp; ${stageLabel}</div>
+          </div>
+          <div>${pill}</div>
+        </div>
+        ${predHtml}
+        ${resultHtml}
+      `;
+      wrap.appendChild(div);
+    });
+
+  // Save prediction buttons
+  document.querySelectorAll("[data-save]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mid  = btn.getAttribute("data-save");
+      const home = document.getElementById(`ph-${mid}`).value;
+      const away = document.getElementById(`pa-${mid}`).value;
+      if (home==="" || away==="") { toast("Enter both scores.", "error"); return; }
+      savePrediction(mid, home, away);
+    });
+  });
+
+  // Admin inline score save
+  document.querySelectorAll("[data-inline-save]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mid  = btn.getAttribute("data-inline-save");
+      const home = document.getElementById(`eis-h-${mid}`).value;
+      const away = document.getElementById(`eis-a-${mid}`).value;
+      if (home==="" || away==="") { toast("Enter both scores.", "error"); return; }
+      adminSetScore(mid, home, away);
+    });
+  });
+
+  // Admin inline score clear
+  document.querySelectorAll("[data-inline-clear]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mid = btn.getAttribute("data-inline-clear");
+      adminClearScore(mid);
+    });
+  });
+}
+
+// ── LEADERBOARD ──
+function renderLeaderboard() {
+  const wrap = document.getElementById("leaderboardWrap");
+  const rows = Object.values(state.users)
+    .sort((a,b) => (b.totalPts||0)-(a.totalPts||0) || a.displayName.localeCompare(b.displayName));
+
+  if (!rows.length) { wrap.innerHTML = '<div style="color:var(--muted);">No data yet.</div>'; return; }
+
+  const cls    = i => i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":"";
+  const medal  = i => i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+
+  wrap.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>Player</th><th>Match Pts</th><th>Bonus Pts</th><th>Total</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map((u,i) => `
+          <tr>
+            <td class="${cls(i)}">${medal(i)||i+1}</td>
+            <td class="${cls(i)}">${u.displayName}</td>
+            <td>${u.matchPts||0}</td>
+            <td>${u.bonusPts||0}</td>
+            <td><strong style="color:var(--gold);">${u.totalPts||0}</strong></td>
+          </tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+
+// ── BONUS ──
+function renderBonus() {
+  const u = currentUser();
+  if (!u || u.isAdmin) {
+    document.getElementById("groupWinnersForm").innerHTML = '<div class="hint">Log in as a player to submit bonus picks.</div>';
+    document.getElementById("overallWinnerForm").innerHTML = '';
+    return;
+  }
+  const bp = state.bonus[u.id] || { groupWinners:{}, overallWinner:"" };
+
+  const groupHtml = GROUPS.map(g => `
+    <div class="bonus-row">
+      <div class="bonus-label">${g}</div>
+      <input style="flex:1;" id="bg-${g.replace(" ","-")}" value="${bp.groupWinners?.[g]||""}" placeholder="Team…" />
+    </div>`).join("") + `<button class="btn-gold" style="margin-top:10px;" id="saveBonusGroupsBtn">Save Group Picks</button>`;
+
+  document.getElementById("groupWinnersForm").innerHTML = groupHtml;
+
+  document.getElementById("overallWinnerForm").innerHTML = `
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>World Cup Winner</label>
+      <input id="overallPick" value="${bp.overallWinner||""}" placeholder="e.g. Brazil" />
+    </div>
+    <button class="btn-gold" id="saveBonusOverallBtn">Save Overall Pick</button>`;
+
+  document.getElementById("saveBonusGroupsBtn").addEventListener("click", () => {
+    if (!u) return;
+    const gw = {};
+    GROUPS.forEach(g => { gw[g] = document.getElementById(`bg-${g.replace(" ","-")}`).value.trim(); });
+    if (!state.bonus[u.id]) state.bonus[u.id] = {};
+    state.bonus[u.id].groupWinners = gw;
+    recalcAll();
+    toast("Group picks saved!", "success");
+    renderBonus();
+  });
+
+  document.getElementById("saveBonusOverallBtn").addEventListener("click", () => {
+    if (!u) return;
+    const ow = document.getElementById("overallPick").value.trim();
+    if (!state.bonus[u.id]) state.bonus[u.id] = {};
+    state.bonus[u.id].overallWinner = ow;
+    recalcAll();
+    toast("Overall winner pick saved!", "success");
+  });
+}
+
+// ── ADMIN ──
+function renderAdmin() {
+  // result match select + current score display
+  const sel = document.getElementById("resultMatchSelect");
+  sel.innerHTML = '<option value="">— select —</option>' +
+    [...state.matches]
+      .sort((a,b)=>new Date(a.kickoffTime)-new Date(b.kickoffTime))
+      .map(m=>`<option value="${m.id}">${m.homeTeam} vs ${m.awayTeam}${m.completed ? ` [${m.resultHome}–${m.resultAway}]` : ''} — ${fmtSGT(m.kickoffTime)}</option>`)
+      .join("");
+
+  sel.onchange = () => {
+    const mid = sel.value;
+    const match = state.matches.find(m=>m.id===mid);
+    const disp = document.getElementById("currentScoreDisplay");
+    const clearBtn = document.getElementById("clearResultBtn");
+    if (match && match.completed) {
+      disp.style.display = "";
+      disp.innerHTML = `Current score: <strong style="color:var(--gold);">${match.resultHome} – ${match.resultAway}</strong>`;
+      document.getElementById("resultHome").value = match.resultHome;
+      document.getElementById("resultAway").value = match.resultAway;
+      clearBtn.style.display = "";
     } else {
-        document.getElementById("loginOverlay").classList.add("hidden");
-        recalcAll();
-        renderAll();
+      disp.style.display = "none";
+      document.getElementById("resultHome").value = "";
+      document.getElementById("resultAway").value = "";
+      clearBtn.style.display = "none";
     }
-    })();
-    </script>
-    </body>
-    </html>
+  };
+
+  // user management
+  const ul = document.getElementById("adminUserList");
+  ul.innerHTML = Object.values(state.users).map(u => `
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--surface); padding:10px 12px; border-radius:8px; border:1px solid var(--border);">
+      <div style="flex:1; min-width:80px;">
+        <div style="font-weight:700; font-size:13px;">${u.displayName}</div>
+        <div class="hint">${u.id} · ${u.totalPts||0} pts</div>
+      </div>
+      <input style="width:150px;" id="admin-name-${u.id}" value="${u.displayName}" placeholder="Name" />
+      <button class="btn-ghost" style="font-size:12px;" data-admin-save-user="${u.id}">Save</button>
+    </div>`).join("");
+
+  ul.querySelectorAll("[data-admin-save-user]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const uid = btn.getAttribute("data-admin-save-user");
+      state.users[uid].displayName = document.getElementById(`admin-name-${uid}`).value.trim() || state.users[uid].displayName;
+      persist();
+      toast(`${state.users[uid].displayName} updated.`, "success");
+      renderAdmin(); renderLeaderboard();
+    });
+  });
+
+  // bonus actuals
+  const agw = document.getElementById("adminGroupWinners");
+  agw.innerHTML = GROUPS.map(g => `
+    <div class="bonus-row" style="margin-bottom:6px;">
+      <div class="bonus-label">${g}</div>
+      <input style="flex:1;" id="agw-${g.replace(" ","-")}" value="${state.settings.actualGroupWinners?.[g]||""}" placeholder="Team…" />
+    </div>`).join("");
+
+  document.getElementById("actualOverallInput").value = state.settings.actualOverallWinner || "";
+
+  document.getElementById("saveActualGroupsBtn").onclick = () => {
+    const gw = {};
+    GROUPS.forEach(g => { gw[g] = document.getElementById(`agw-${g.replace(" ","-")}`).value.trim(); });
+    state.settings.actualGroupWinners = gw;
+    recalcAll(); renderLeaderboard();
+    toast("Actual group winners saved.", "success");
+  };
+  document.getElementById("saveActualOverallBtn").onclick = () => {
+    state.settings.actualOverallWinner = document.getElementById("actualOverallInput").value.trim();
+    recalcAll(); renderLeaderboard();
+    toast("Actual overall winner saved.", "success");
+  };
+
+  // All matches list with edit
+  renderAdminMatchList();
+}
+
+function renderAdminMatchList() {
+  const wrap = document.getElementById("adminMatchList");
+  if (!state.matches.length) {
+    wrap.innerHTML = '<div class="hint">No matches added yet.</div>';
+    return;
+  }
+  wrap.innerHTML = [...state.matches]
+    .sort((a,b) => new Date(a.kickoffTime) - new Date(b.kickoffTime))
+    .map(m => `
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; margin-bottom:8px;">
+        <div style="flex:1; min-width:140px;">
+          <div style="font-weight:700; font-size:13px; color:var(--heading);">${m.homeTeam} vs ${m.awayTeam}</div>
+          <div class="hint">${fmtSGT(m.kickoffTime)} · ${m.stage}${m.groupName?' · '+m.groupName:''}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <input type="number" min="0" id="aml-h-${m.id}" value="${m.resultHome??''}" placeholder="H" style="width:56px;" />
+          <span class="vs" style="font-size:13px;">–</span>
+          <input type="number" min="0" id="aml-a-${m.id}" value="${m.resultAway??''}" placeholder="A" style="width:56px;" />
+          <button class="btn-blue" style="padding:6px 12px; font-size:12px;" data-aml-save="${m.id}">${m.completed?'Update':'Set'}</button>
+          ${m.completed ? `<button class="btn-ghost" style="padding:6px 12px; font-size:12px; color:var(--red); border-color:var(--red);" data-aml-clear="${m.id}">Clear</button>` : ''}
+        </div>
+        <span class="pill ${m.completed?'pill-done':isLocked(m)?'pill-locked':'pill-open'}">${m.completed?'Done':isLocked(m)?'Locked':'Open'}</span>
+      </div>`).join("");
+
+  wrap.querySelectorAll("[data-aml-save]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mid  = btn.getAttribute("data-aml-save");
+      const home = document.getElementById(`aml-h-${mid}`).value;
+      const away = document.getElementById(`aml-a-${mid}`).value;
+      if (home==="" || away==="") { toast("Enter both scores.", "error"); return; }
+      adminSetScore(mid, home, away);
+    });
+  });
+  wrap.querySelectorAll("[data-aml-clear]").forEach(btn => {
+    btn.addEventListener("click", () => adminClearScore(btn.getAttribute("data-aml-clear")));
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+//  ADMIN SCORE ACTIONS
+// ════════════════════════════════════════════════════════════
+
+function adminSetScore(matchId, home, away) {
+  const match = state.matches.find(m=>m.id===matchId);
+  if (!match) return;
+  match.resultHome = Math.max(0, Number(home));
+  match.resultAway = Math.max(0, Number(away));
+  match.completed  = true;
+  recalcAll();
+  toast("Score saved & points recalculated! 🏆", "success");
+  renderAll();
+}
+
+function adminClearScore(matchId) {
+  const match = state.matches.find(m=>m.id===matchId);
+  if (!match) return;
+  match.resultHome = null;
+  match.resultAway = null;
+  match.completed  = false;
+  recalcAll();
+  toast("Result cleared.", "success");
+  renderAll();
+}
+
+// ════════════════════════════════════════════════════════════
+//  PREDICTION SAVE
+// ════════════════════════════════════════════════════════════
+
+function savePrediction(matchId, home, away) {
+  const u = currentUser();
+  if (!u || u.isAdmin) return;
+  const match = state.matches.find(m=>m.id===matchId);
+  if (!match || isLocked(match)) { toast("Deadline passed!", "error"); return; }
+  if (!state.predictions[u.id]) state.predictions[u.id] = {};
+  state.predictions[u.id][matchId] = { home: Math.max(0,Number(home)), away: Math.max(0,Number(away)), pts: 0 };
+  if (match.completed) {
+    state.predictions[u.id][matchId].pts = calcPts(
+      Math.max(0,Number(home)), Math.max(0,Number(away)),
+      Number(match.resultHome), Number(match.resultAway)
+    );
+  }
+  recalcAll();
+  toast("Prediction saved! ⚽", "success");
+  renderMatches(); renderLeaderboard();
+}
+
+// ════════════════════════════════════════════════════════════
+//  LOGIN / LOGOUT
+// ════════════════════════════════════════════════════════════
+
+function buildLoginGrid() {
+  const grid = document.getElementById("userGrid");
+  grid.innerHTML = Object.values(state.users).map(u => `
+    <button class="user-select-btn" data-uid="${u.id}">${u.displayName}</button>`).join("");
+
+  grid.querySelectorAll(".user-select-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const uid  = btn.getAttribute("data-uid");
+      const user = state.users[uid];
+      if (!user) return;
+      state.session = { userId: uid, isAdmin: false };
+      persist();
+      document.getElementById("loginOverlay").classList.add("hidden");
+      renderAll();
+      toast(`Welcome, ${user.displayName}! 🎉`, "success");
+    });
+  });
+}
+
+document.getElementById("adminLoginShowBtn").addEventListener("click", () => {
+  const s = document.getElementById("adminLoginSection");
+  s.classList.toggle("hidden");
+});
+
+document.getElementById("adminLoginBtn").addEventListener("click", () => {
+  const pass = document.getElementById("adminPassInput").value;
+  if (pass === ADMIN_PASS) {
+    state.session = { isAdmin: true };
+    persist();
+    document.getElementById("loginOverlay").classList.add("hidden");
+    renderAll();
+    toast("Welcome, Admin! ⚙️", "success");
+  } else {
+    toast("Wrong password.", "error");
+  }
+});
+
+document.getElementById("adminPassInput").addEventListener("keydown", e => {
+  if (e.key==="Enter") document.getElementById("adminLoginBtn").click();
+});
+
+function logout() {
+  state.session = null;
+  persist();
+  document.getElementById("loginOverlay").classList.remove("hidden");
+  document.getElementById("adminLoginSection").classList.add("hidden");
+  document.getElementById("adminPassInput").value = "";
+  buildLoginGrid();
+}
+
+// ════════════════════════════════════════════════════════════
+//  ADMIN — Add Match & Set Score (panel)
+// ════════════════════════════════════════════════════════════
+
+document.getElementById("addMatchBtn").addEventListener("click", () => {
+  const home    = document.getElementById("homeTeam").value.trim();
+  const away    = document.getElementById("awayTeam").value.trim();
+  const kickoff = document.getElementById("kickoffTime").value;
+  const deadline= document.getElementById("deadlineTime").value;
+  const stage   = document.getElementById("stage").value;
+  const group   = document.getElementById("groupName").value.trim();
+
+  if (!home || !away || !kickoff) { toast("Fill in home team, away team and kickoff time.", "error"); return; }
+
+  const id = `m${Date.now()}`;
+  state.matches.push({
+    id, homeTeam: home, awayTeam: away,
+    kickoffTime: new Date(kickoff).toISOString(),
+    deadline:    deadline ? new Date(deadline).toISOString() : new Date(kickoff).toISOString(),
+    stage,
+    groupName:   stage==="group" ? group : "",
+    completed:   false,
+    resultHome:  null, resultAway: null
+  });
+  persist();
+  toast("Match added! ✅", "success");
+  ["homeTeam","awayTeam","kickoffTime","deadlineTime","groupName"].forEach(id => document.getElementById(id).value="");
+  renderAll();
+});
+
+document.getElementById("saveResultBtn").addEventListener("click", () => {
+  const mid  = document.getElementById("resultMatchSelect").value;
+  const home = document.getElementById("resultHome").value;
+  const away = document.getElementById("resultAway").value;
+  if (!mid || home==="" || away==="") { toast("Select a match and enter scores.", "error"); return; }
+  adminSetScore(mid, home, away);
+});
+
+document.getElementById("clearResultBtn").addEventListener("click", () => {
+  const mid = document.getElementById("resultMatchSelect").value;
+  if (!mid) { toast("Select a match first.", "error"); return; }
+  adminClearScore(mid);
+});
+
+// ════════════════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════════════════
+
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.getAttribute("data-tab");
+    document.querySelectorAll(".tab-panel").forEach(p=>p.classList.add("hidden"));
+    document.getElementById(`tab-${tab}`).classList.remove("hidden");
+  });
+});
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+
+(function init() {
+  buildLoginGrid();
+  if (state.session) {
+    if (!state.session.isAdmin && !state.users[state.session.userId]) {
+      state.session = null; persist();
+    }
+  }
+  if (!state.session) {
+    document.getElementById("loginOverlay").classList.remove("hidden");
+  } else {
+    document.getElementById("loginOverlay").classList.add("hidden");
+    recalcAll();
+    renderAll();
+  }
+})();
+</script>
+</body>
+</html>

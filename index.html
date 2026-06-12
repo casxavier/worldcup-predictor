@@ -3,1082 +3,924 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>World Cup Prediction App</title>
- <style>
-  :root {
-    --bg: #f6f4ed;
-    --bg-alt: #ebe7db;
-    --card: #fffdf7;
-    --card-2: #f1eee4;
-    --muted: #5f6b6d;
-    --text: #1f2937;
-    --heading: #1f315d;
-    --accent: #1f6f50;
-    --accent-2: #d97706;
-    --accent-3: #2563eb;
-    --danger: #b91c1c;
-    --border: #d9d4c7;
-    --gold: #b45309;
-    --navy: #1f315d;
-    --green: #1f6f50;
-    --light-row: #eef2ec;
-    --white: #ffffff;
-  }
-
-  * {
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-  }
-
-  body {
-    margin: 0;
-    background:
-      radial-gradient(circle at top left, #fff8e7 0%, transparent 30%),
-      radial-gradient(circle at top right, #e8f3ec 0%, transparent 28%),
-      linear-gradient(180deg, #f8f5ee 0%, #ece7da 100%);
-    color: var(--text);
-  }
-
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-
-  h1, h2, h3 {
-    margin: 0 0 12px;
-    color: var(--heading);
-  }
-
-  .grid {
-    display: grid;
-    gap: 16px;
-  }
-
-  .grid-2 {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .card {
-    background: linear-gradient(180deg, var(--card) 0%, #f8f6ef 100%);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 10px 24px rgba(31, 49, 93, 0.08);
-  }
-
-  .row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .between {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  input, select, button, textarea {
-    background: var(--white);
-    color: var(--text);
-    border: 1px solid #cfc8b7;
-    border-radius: 10px;
-    padding: 10px 12px;
-    font-size: 14px;
-  }
-
-  input[type="number"] {
-    width: 80px;
-  }
-
-  input:focus, select:focus, textarea:focus {
-    outline: 2px solid rgba(37, 99, 235, 0.18);
-    border-color: var(--accent-3);
-  }
-
-  button {
-    cursor: pointer;
-    border: none;
-    background: var(--navy);
-    color: white;
-    font-weight: 700;
-    transition: 0.2s ease;
-  }
-
-  button:hover {
-    transform: translateY(-1px);
-    opacity: 0.96;
-  }
-
-  button.secondary {
-    background: #6b7280;
-    color: white;
-  }
-
-  button.success {
-    background: var(--green);
-    color: white;
-  }
-
-  button.danger {
-    background: var(--danger);
-    color: white;
-  }
-
-  button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .muted {
-    color: var(--muted);
-    font-size: 13px;
-  }
-
-  .pill {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    background: #e7ecf8;
-    color: var(--navy);
-    border: 1px solid #cfd8ee;
-  }
-
-  .pill.locked {
-    background: #fbe4e4;
-    color: #991b1b;
-    border: 1px solid #f2c4c4;
-  }
-
-  .pill.open {
-    background: #e3f3ea;
-    color: var(--green);
-    border: 1px solid #bfe2cc;
-  }
-
-  .pill.done {
-    background: #e9eef9;
-    color: var(--navy);
-    border: 1px solid #c9d5f0;
-  }
-
-  .match {
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px;
-    margin-bottom: 12px;
-    background:
-      linear-gradient(180deg, #fffdf8 0%, var(--light-row) 100%);
-  }
-
-  .teams {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--heading);
-  }
-
-  .small {
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 8px;
-    background: var(--white);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  th, td {
-    text-align: left;
-    padding: 10px 8px;
-    border-bottom: 1px solid #e5dfd0;
-    font-size: 14px;
-  }
-
-  th {
-    color: var(--navy);
-    background: #eef2f8;
-  }
-
-  .leader-1 {
-    color: var(--gold);
-    font-weight: 700;
-  }
-
-  .section-title {
-    margin-bottom: 10px;
-    font-size: 20px;
-    color: var(--navy);
-  }
-
-  .rules ul {
-    margin: 8px 0 0 18px;
-  }
-
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: rgba(246, 244, 237, 0.95);
-    backdrop-filter: blur(8px);
-    border-bottom: 3px solid var(--navy);
-    margin-bottom: 16px;
-  }
-
-  .topbar .container {
-    padding-top: 14px;
-    padding-bottom: 14px;
-  }
-
-  .tabs {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-  }
-
-  .tab-btn {
-    background: #e8ecf6;
-    color: var(--navy);
-    border: 1px solid #cfd8ee;
-  }
-
-  .tab-btn.active {
-    background: var(--navy);
-    color: white;
-  }
-
-  .hidden {
-    display: none;
-  }
-
-  .score-box {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-
-  .notice {
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: #e8eef9;
-    color: var(--navy);
-    font-size: 13px;
-    margin-top: 10px;
-    border: 1px solid #cad7f2;
-  }
-
-  .success-msg {
-    background: #e3f3ea;
-    color: var(--green);
-    border: 1px solid #bfe2cc;
-  }
-
-  .danger-msg {
-    background: #fbe4e4;
-    color: #991b1b;
-    border: 1px solid #f2c4c4;
-  }
-
-  label {
-    color: var(--navy);
-    font-weight: 600;
-  }
-
-  strong {
-    color: var(--heading);
-  }
-
-  @media (max-width: 900px) {
-    .grid-2 {
-      grid-template-columns: 1fr;
+  <title>World Cup 2026 Predictor</title>
+  <style>
+    :root {
+      --bg: #f6f4ed;
+      --bg-alt: #ebe7db;
+      --card: #fffdf7;
+      --card-2: #f1eee4;
+      --muted: #5f6b6d;
+      --text: #1f2937;
+      --heading: #1f315d;
+      --accent: #1f6f50;
+      --accent-2: #d97706;
+      --accent-3: #2563eb;
+      --danger: #b91c1c;
+      --border: #d9d4c7;
+      --gold: #b45309;
+      --navy: #1f315d;
+      --green: #1f6f50;
+      --light-row: #eef2ec;
+      --white: #ffffff;
     }
-  }
-</style>
+
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, #fff8e7 0%, transparent 30%),
+        radial-gradient(circle at top right, #e8f3ec 0%, transparent 28%),
+        linear-gradient(180deg, #f8f5ee 0%, #ece7da 100%);
+      color: var(--text);
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    h1, h2, h3 { margin: 0 0 12px; color: var(--heading); }
+
+    .grid { display: grid; gap: 16px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+
+    .card {
+      background: linear-gradient(180deg, var(--card) 0%, #f8f6ef 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 10px 24px rgba(31, 49, 93, 0.08);
+    }
+
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    .between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    input, select, button, textarea {
+      background: var(--white);
+      color: var(--text);
+      border: 1px solid #cfc8b7;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    input[type="number"] { width: 80px; }
+
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid rgba(37, 99, 235, 0.18);
+      border-color: var(--accent-3);
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: var(--navy);
+      color: white;
+      font-weight: 700;
+      transition: 0.2s ease;
+    }
+
+    button:hover { transform: translateY(-1px); opacity: 0.96; }
+    button.secondary { background: #6b7280; color: white; }
+    button.success { background: var(--green); color: white; }
+    button.danger { background: var(--danger); color: white; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .muted { color: var(--muted); font-size: 13px; }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #e7ecf8;
+      color: var(--navy);
+      border: 1px solid #cfd8ee;
+    }
+    .pill.locked { background: #fbe4e4; color: #991b1b; border: 1px solid #f2c4c4; }
+    .pill.open   { background: #e3f3ea; color: var(--green); border: 1px solid #bfe2cc; }
+    .pill.done   { background: #e9eef9; color: var(--navy); border: 1px solid #c9d5f0; }
+
+    .match {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+      background: linear-gradient(180deg, #fffdf8 0%, var(--light-row) 100%);
+    }
+
+    .teams { font-size: 18px; font-weight: 700; color: var(--heading); }
+    .small { font-size: 12px; color: var(--muted); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      background: var(--white);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5dfd0; font-size: 14px; }
+    th { color: var(--navy); background: #eef2f8; }
+    .leader-1 { color: var(--gold); font-weight: 700; }
+
+    .section-title { margin-bottom: 10px; font-size: 20px; color: var(--navy); }
+
+    .rules ul { margin: 8px 0 0 18px; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(246, 244, 237, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 3px solid var(--navy);
+      margin-bottom: 16px;
+    }
+
+    .topbar .container { padding-top: 14px; padding-bottom: 14px; }
+
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+    .tab-btn { background: #e8ecf6; color: var(--navy); border: 1px solid #cfd8ee; }
+    .tab-btn.active { background: var(--navy); color: white; }
+
+    .hidden { display: none; }
+
+    .score-box { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+    .notice {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #e8eef9;
+      color: var(--navy);
+      font-size: 13px;
+      margin-top: 10px;
+      border: 1px solid #cad7f2;
+    }
+
+    .success-msg { background: #e3f3ea; color: var(--green); border: 1px solid #bfe2cc; }
+    .danger-msg  { background: #fbe4e4; color: #991b1b;    border: 1px solid #f2c4c4; }
+
+    label { color: var(--navy); font-weight: 600; }
+    strong { color: var(--heading); }
+
+    .admin-note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="container">
-      <div class="between">
-        <div>
-          <h1>World Cup Prediction App</h1>
-          <div class="muted">All times shown in Singapore Time (GMT+8)</div>
-        </div>
-        <div class="row">
-          <input id="displayName" type="text" placeholder="Enter your name" />
-          <button id="saveNameBtn" class="success">Save Name</button>
-        </div>
-      </div>
 
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="matches">Matches</button>
-        <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
-        <button class="tab-btn" data-tab="bonus">Bonus Picks</button>
-        <button class="tab-btn" data-tab="admin">Admin</button>
-        <button class="tab-btn" data-tab="rules">Rules</button>
+<div class="topbar">
+  <div class="container">
+    <div class="between">
+      <div>
+        <h1>World Cup 2026 Predictor</h1>
+        <div class="muted">Shared app with Firebase backend • Singapore Time (GMT+8)</div>
+      </div>
+      <div class="row">
+        <input id="displayName" type="text" placeholder="Enter your name" />
+        <button id="saveNameBtn" class="success">Save Name</button>
       </div>
     </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="matches">Matches</button>
+      <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
+      <button class="tab-btn" data-tab="bonus">Bonus Picks</button>
+      <button class="tab-btn" data-tab="admin">Admin</button>
+      <button class="tab-btn" data-tab="rules">Rules</button>
+    </div>
   </div>
+</div>
 
-  <div class="container">
-    <div id="messageBox" class="hidden notice"></div>
+<div class="container">
+  <div id="messageBox" class="hidden notice"></div>
 
-    <section id="tab-matches" class="tab-panel">
+  <!-- MATCHES -->
+  <section id="tab-matches" class="tab-panel">
+    <div class="card">
+      <div class="between">
+        <h2 class="section-title">Match Predictions</h2>
+        <div class="small">Predictions lock when the match kicks off</div>
+      </div>
+      <div id="matchesList"></div>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section id="tab-leaderboard" class="tab-panel hidden">
+    <div class="card">
+      <h2 class="section-title">Leaderboard</h2>
+      <div id="leaderboardWrap"></div>
+    </div>
+  </section>
+
+  <!-- BONUS -->
+  <section id="tab-bonus" class="tab-panel hidden">
+    <div class="grid grid-2">
       <div class="card">
-        <div class="between">
-          <h2 class="section-title">Match Predictions</h2>
-          <div class="small">Predictions lock when the match kicks off</div>
-        </div>
-        <div id="matchesList"></div>
+        <h2 class="section-title">Group Stage Winners</h2>
+        <div class="muted">5 pts per correct group winner</div>
+        <div id="groupWinnersForm"></div>
       </div>
-    </section>
-
-    <section id="tab-leaderboard" class="tab-panel hidden">
       <div class="card">
-        <h2 class="section-title">Leaderboard</h2>
-        <div id="leaderboardWrap"></div>
+        <h2 class="section-title">Overall Winner</h2>
+        <div class="muted">20 pts for correct overall winner</div>
+        <div id="overallWinnerForm"></div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="tab-bonus" class="tab-panel hidden">
-      <div class="grid grid-2">
-        <div class="card">
-          <h2 class="section-title">Group Stage Winners</h2>
-          <div class="muted">5 pts per correct group winner</div>
-          <div id="groupWinnersForm"></div>
+  <!-- ADMIN -->
+  <section id="tab-admin" class="tab-panel hidden">
+    <div class="grid grid-2">
+      <div class="card">
+        <h2 class="section-title">Add Match</h2>
+        <div class="grid">
+          <input id="homeTeam" placeholder="Home team" />
+          <input id="awayTeam" placeholder="Away team" />
+          <input id="kickoffTime" type="datetime-local" />
+          <select id="stage">
+            <option value="group">Group</option>
+            <option value="knockout">Knockout</option>
+          </select>
+          <input id="groupName" placeholder="Group name (e.g. Group A)" />
+          <button id="addMatchBtn" class="success">Add Match</button>
         </div>
-        <div class="card">
-          <h2 class="section-title">Overall Winner</h2>
-          <div class="muted">20 pts for correct overall winner</div>
-          <div id="overallWinnerForm"></div>
-        </div>
+        <div class="admin-note">Use this tab only for the organiser/admin.</div>
       </div>
-    </section>
 
-    <section id="tab-admin" class="tab-panel hidden">
-      <div class="grid grid-2">
-        <div class="card">
-          <h2 class="section-title">Add Match</h2>
-          <div class="grid">
-            <input id="homeTeam" placeholder="Home team" />
-            <input id="awayTeam" placeholder="Away team" />
-            <input id="kickoffTime" type="datetime-local" />
-            <select id="stage">
-              <option value="group">Group</option>
-              <option value="knockout">Knockout</option>
-            </select>
-            <input id="groupName" placeholder="Group name (e.g. Group A)" />
-            <button id="addMatchBtn" class="success">Add Match</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2 class="section-title">Set Result</h2>
-          <div class="grid">
-            <select id="resultMatchSelect"></select>
-            <div class="row">
-              <input id="resultHomeScore" type="number" min="0" placeholder="Home" />
-              <span>-</span>
-              <input id="resultAwayScore" type="number" min="0" placeholder="Away" />
-            </div>
-            <button id="saveResultBtn">Save Result & Recalculate</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2 class="section-title">Set Actual Group Winners</h2>
-          <div id="adminGroupWinners"></div>
-        </div>
-
-        <div class="card">
-          <h2 class="section-title">Set Actual Overall Winner</h2>
-          <div id="adminOverallWinner"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="tab-rules" class="tab-panel hidden">
-      <div class="card rules">
-        <h2 class="section-title">Rules</h2>
-        <ul>
-          <li>Correct score = 3 pts</li>
-          <li>Correct goal difference = 2 pts</li>
-          <li>Correct winner / draw = 1 pt</li>
-          <li>Correct group stage winner = 5 pts per group</li>
-          <li>Correct overall winner = 20 pts</li>
-          <li>Points are cumulative in the sense that max per match is 3 pts</li>
-          <li>For knockout games, only score / goal diff / winner apply</li>
-          <li>Predictions lock at kickoff time</li>
-          <li>All times shown in Singapore Time (GMT+8)</li>
-        </ul>
-      </div>
-    </section>
-  </div>
-
-  <script type="module">
-    /*
-      ============================================================
-      FIREBASE
-      ============================================================
-      You said Firebase is already integrated.
-      If your Firebase init already exists elsewhere, keep that and
-      remove/adjust this section.
-
-      Required Firestore collections:
-      - matches
-      - predictions
-      - users
-      - settings/app
-      - bonusPredictions
-    */
-
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      getDoc,
-      setDoc,
-      updateDoc,
-      doc,
-      query,
-      orderBy,
-      serverTimestamp,
-      where
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    // Replace with your config only if not already initialized elsewhere
-    const firebaseConfig = {
-    apiKey: "AIzaSyBO3YHKEkvodyB3YUE35JescB3e10ja0uA",
-    authDomain: "worldcup-predictor-6fdb8.firebaseapp.com",
-    projectId: "worldcup-predictor-6fdb8",
-    storageBucket: "worldcup-predictor-6fdb8.firebasestorage.app",
-    messagingSenderId: "255220213792",
-    appId: "1:255220213792:web:4d628451b116a95d703445",
-    measurementId: "G-6MGEQGYESZ"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    /*
-      ============================================================
-      APP STATE
-      ============================================================
-    */
-    let currentUser = null;
-    let matches = [];
-    let predictions = [];
-    let users = [];
-    let bonusPredictions = [];
-    let appSettings = {
-      actualGroupWinners: {},
-      actualOverallWinner: ""
-    };
-
-    const DEFAULT_GROUPS = ["Group A", "Group B", "Group C", "Group D", "Group E", "Group F", "Group G", "Group H"];
-
-    /*
-      ============================================================
-      HELPERS
-      ============================================================
-    */
-    function showMessage(text, type = "info") {
-      const box = document.getElementById("messageBox");
-      box.textContent = text;
-      box.className = "notice";
-      if (type === "success") box.classList.add("success-msg");
-      if (type === "error") box.classList.add("danger-msg");
-      box.classList.remove("hidden");
-      setTimeout(() => box.classList.add("hidden"), 3000);
-    }
-
-    function getCurrentUserName() {
-      return localStorage.getItem("predictor_name") || "";
-    }
-
-    async function ensureUser() {
-      const name = getCurrentUserName();
-      if (!name) return null;
-
-      const userId = slugify(name);
-      currentUser = { id: userId, name };
-
-      await setDoc(doc(db, "users", userId), {
-        id: userId,
-        name,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      return currentUser;
-    }
-
-    function slugify(str) {
-      return str.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    }
-
-    function formatSingaporeTime(dateStr) {
-      const d = new Date(dateStr);
-      return new Intl.DateTimeFormat("en-SG", {
-        timeZone: "Asia/Singapore",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      }).format(d);
-    }
-
-    function isLocked(kickoffTime) {
-      return new Date() >= new Date(kickoffTime);
-    }
-
-    function getMatchOutcome(home, away) {
-      if (home > away) return "home";
-      if (away > home) return "away";
-      return "draw";
-    }
-
-    function calculateMatchPoints(predHome, predAway, actualHome, actualAway) {
-      if (
-        predHome === actualHome &&
-        predAway === actualAway
-      ) return 3;
-
-      const predDiff = predHome - predAway;
-      const actualDiff = actualHome - actualAway;
-      const predOutcome = getMatchOutcome(predHome, predAway);
-      const actualOutcome = getMatchOutcome(actualHome, actualAway);
-
-      if (predDiff === actualDiff) return 2;
-      if (predOutcome === actualOutcome) return 1;
-      return 0;
-    }
-
-    function getPredictionForMatch(matchId, userId) {
-      return predictions.find(p => p.matchId === matchId && p.userId === userId);
-    }
-
-    function getBonusPrediction(userId) {
-      return bonusPredictions.find(p => p.userId === userId) || {
-        userId,
-        groupWinners: {},
-        overallWinner: ""
-      };
-    }
-
-    async function savePrediction(matchId, homeScore, awayScore) {
-      if (!currentUser) {
-        showMessage("Please save your name first.", "error");
-        return;
-      }
-
-      const match = matches.find(m => m.id === matchId);
-      if (!match) return;
-
-      if (isLocked(match.kickoffTime)) {
-        showMessage("Prediction is locked for this match.", "error");
-        return;
-      }
-
-      const predictionId = `\${currentUser.id}_\${matchId}`;
-      await setDoc(doc(db, "predictions", predictionId), {
-        id: predictionId,
-        userId: currentUser.id,
-        userName: currentUser.name,
-        matchId,
-        predHomeScore: Number(homeScore),
-        predAwayScore: Number(awayScore),
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      showMessage("Prediction saved.", "success");
-      await loadAllData();
-      renderAll();
-    }
-
-    async function saveBonusPrediction(groupWinners, overallWinner) {
-      if (!currentUser) {
-        showMessage("Please save your name first.", "error");
-        return;
-      }
-
-      await setDoc(doc(db, "bonusPredictions", currentUser.id), {
-        userId: currentUser.id,
-        userName: currentUser.name,
-        groupWinners,
-        overallWinner,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      showMessage("Bonus picks saved.", "success");
-      await loadAllData();
-      renderAll();
-    }
-
-    async function addMatch() {
-      const homeTeam = document.getElementById("homeTeam").value.trim();
-      const awayTeam = document.getElementById("awayTeam").value.trim();
-      const kickoffTime = document.getElementById("kickoffTime").value;
-      const stage = document.getElementById("stage").value;
-      const groupName = document.getElementById("groupName").value.trim();
-
-      if (!homeTeam || !awayTeam || !kickoffTime) {
-        showMessage("Please fill in all required match fields.", "error");
-        return;
-      }
-
-      await addDoc(collection(db, "matches"), {
-        homeTeam,
-        awayTeam,
-        kickoffTime: new Date(kickoffTime).toISOString(),
-        stage,
-        groupName: stage === "group" ? groupName : "",
-        resultHomeScore: null,
-        resultAwayScore: null,
-        completed: false,
-        createdAt: serverTimestamp()
-      });
-
-      showMessage("Match added.", "success");
-
-      document.getElementById("homeTeam").value = "";
-      document.getElementById("awayTeam").value = "";
-      document.getElementById("kickoffTime").value = "";
-      document.getElementById("groupName").value = "";
-
-      await loadAllData();
-      renderAll();
-    }
-
-    async function saveResult() {
-      const matchId = document.getElementById("resultMatchSelect").value;
-      const home = document.getElementById("resultHomeScore").value;
-      const away = document.getElementById("resultAwayScore").value;
-
-      if (!matchId || home === "" || away === "") {
-        showMessage("Please select a match and enter both scores.", "error");
-        return;
-      }
-
-      await updateDoc(doc(db, "matches", matchId), {
-        resultHomeScore: Number(home),
-        resultAwayScore: Number(away),
-        completed: true,
-        updatedAt: serverTimestamp()
-      });
-
-      await recalculateAllScores();
-      showMessage("Result saved and leaderboard recalculated.", "success");
-      await loadAllData();
-      renderAll();
-    }
-
-    async function saveActualGroupWinners() {
-      const actualGroupWinners = {};
-      DEFAULT_GROUPS.forEach(group => {
-        const val = document.getElementById(`actual-\${slugify(group)}`)?.value?.trim() || "";
-        actualGroupWinners[group] = val;
-      });
-
-      await setDoc(doc(db, "settings", "app"), {
-        actualGroupWinners,
-        actualOverallWinner: appSettings.actualOverallWinner || "",
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      await recalculateAllScores();
-      showMessage("Actual group winners saved.", "success");
-      await loadAllData();
-      renderAll();
-    }
-
-    async function saveActualOverallWinner() {
-      const winner = document.getElementById("actualOverallWinnerInput").value.trim();
-
-      await setDoc(doc(db, "settings", "app"), {
-        actualGroupWinners: appSettings.actualGroupWinners || {},
-        actualOverallWinner: winner,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      await recalculateAllScores();
-      showMessage("Actual overall winner saved.", "success");
-      await loadAllData();
-      renderAll();
-    }
-
-    async function recalculateAllScores() {
-      const userTotals = {};
-
-      users.forEach(u => {
-        userTotals[u.id] = {
-          userId: u.id,
-          userName: u.name,
-          matchPoints: 0,
-          bonusPoints: 0,
-          totalPoints: 0
-        };
-      });
-
-      for (const p of predictions) {
-        const match = matches.find(m => m.id === p.matchId);
-        if (!match || !match.completed) continue;
-
-        const points = calculateMatchPoints(
-          Number(p.predHomeScore),
-          Number(p.predAwayScore),
-          Number(match.resultHomeScore),
-          Number(match.resultAwayScore)
-        );
-
-        if (!userTotals[p.userId]) {
-          userTotals[p.userId] = {
-            userId: p.userId,
-            userName: p.userName || p.userId,
-            matchPoints: 0,
-            bonusPoints: 0,
-            totalPoints: 0
-          };
-        }
-
-        userTotals[p.userId].matchPoints += points;
-
-        await setDoc(doc(db, "predictions", p.id), {
-          pointsAwarded: points
-        }, { merge: true });
-      }
-
-      for (const bp of bonusPredictions) {
-        if (!userTotals[bp.userId]) {
-          userTotals[bp.userId] = {
-            userId: bp.userId,
-            userName: bp.userName || bp.userId,
-            matchPoints: 0,
-            bonusPoints: 0,
-            totalPoints: 0
-          };
-        }
-
-        let bonus = 0;
-
-        const actualGroups = appSettings.actualGroupWinners || {};
-        const predictedGroups = bp.groupWinners || {};
-
-        for (const group of DEFAULT_GROUPS) {
-          if (
-            actualGroups[group] &&
-            predictedGroups[group] &&
-            actualGroups[group].trim().toLowerCase() === predictedGroups[group].trim().toLowerCase()
-          ) {
-            bonus += 5;
-          }
-        }
-
-        if (
-          appSettings.actualOverallWinner &&
-          bp.overallWinner &&
-          appSettings.actualOverallWinner.trim().toLowerCase() === bp.overallWinner.trim().toLowerCase()
-        ) {
-          bonus += 20;
-        }
-
-        userTotals[bp.userId].bonusPoints = bonus;
-      }
-
-      for (const uid of Object.keys(userTotals)) {
-        userTotals[uid].totalPoints = userTotals[uid].matchPoints + userTotals[uid].bonusPoints;
-        await setDoc(doc(db, "users", uid), {
-          leaderboard: userTotals[uid],
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-      }
-    }
-
-    async function loadAllData() {
-      await ensureUser();
-
-      const matchesSnap = await getDocs(query(collection(db, "matches"), orderBy("kickoffTime")));
-      matches = matchesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      const predictionsSnap = await getDocs(collection(db, "predictions"));
-      predictions = predictionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      const usersSnap = await getDocs(collection(db, "users"));
-      users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      const bonusSnap = await getDocs(collection(db, "bonusPredictions"));
-      bonusPredictions = bonusSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      const settingsRef = doc(db, "settings", "app");
-      const settingsSnap = await getDoc(settingsRef);
-      if (settingsSnap.exists()) {
-        appSettings = {
-          actualGroupWinners: settingsSnap.data().actualGroupWinners || {},
-          actualOverallWinner: settingsSnap.data().actualOverallWinner || ""
-        };
-      } else {
-        appSettings = {
-          actualGroupWinners: {},
-          actualOverallWinner: ""
-        };
-      }
-    }
-
-    /*
-      ============================================================
-      RENDER
-      ============================================================
-    */
-    function renderMatches() {
-      const wrap = document.getElementById("matchesList");
-      wrap.innerHTML = "";
-
-      if (!matches.length) {
-        wrap.innerHTML = `<div class="muted">No matches added yet.</div>`;
-        return;
-      }
-
-      matches.forEach(match => {
-        const locked = isLocked(match.kickoffTime);
-        const pred = currentUser ? getPredictionForMatch(match.id, currentUser.id) : null;
-
-        const div = document.createElement("div");
-        div.className = "match";
-
-        let statusPill = `<span class="pill \${locked ? "locked" : "open"}">\${locked ? "Locked" : "Open"}</span>`;
-        if (match.completed) statusPill = `<span class="pill done">Result Added</span>`;
-
-        div.innerHTML = `
-          <div class="between">
-            <div>
-              <div class="teams">\${match.homeTeam} vs \${match.awayTeam}</div>
-              <div class="small">
-                \${formatSingaporeTime(match.kickoffTime)}
-                • \${match.stage.toUpperCase()}
-                \${match.groupName ? `• \${match.groupName}` : ""}
-              </div>
-            </div>
-            <div>\${statusPill}</div>
-          </div>
-
-          <div class="score-box">
-            <input type="number" min="0" id="home-\${match.id}" value="\${pred?.predHomeScore ?? ""}" \${locked ? "disabled" : ""} />
+      <div class="card">
+        <h2 class="section-title">Set Result</h2>
+        <div class="grid">
+          <select id="resultMatchSelect"></select>
+          <div class="row">
+            <input id="resultHomeScore" type="number" min="0" placeholder="Home" />
             <span>-</span>
-            <input type="number" min="0" id="away-\${match.id}" value="\${pred?.predAwayScore ?? ""}" \${locked ? "disabled" : ""} />
-            <button \${locked ? "disabled" : ""} data-save-match="\${match.id}">Save Prediction</button>
+            <input id="resultAwayScore" type="number" min="0" placeholder="Away" />
           </div>
+          <button id="saveResultBtn">Save Result &amp; Recalculate</button>
+        </div>
+      </div>
 
-          \${
-            match.completed
-              ? `<div class="notice" style="margin-top:10px;">
-                  Final result: <strong>\${match.resultHomeScore} - \${match.resultAwayScore}</strong>
-                  \${pred ? `• Your points: <strong>\${pred.pointsAwarded ?? 0}</strong>` : ""}
-                 </div>`
-              : ""
-          }
-        `;
+      <div class="card">
+        <h2 class="section-title">Set Actual Group Winners</h2>
+        <div id="adminGroupWinners"></div>
+      </div>
 
-        wrap.appendChild(div);
-      });
+      <div class="card">
+        <h2 class="section-title">Set Actual Overall Winner</h2>
+        <div id="adminOverallWinner"></div>
+      </div>
+    </div>
+  </section>
 
-      document.querySelectorAll("[data-save-match]").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-          const matchId = e.target.getAttribute("data-save-match");
-          const home = document.getElementById(`home-\${matchId}`).value;
-          const away = document.getElementById(`away-\${matchId}`).value;
+  <!-- RULES -->
+  <section id="tab-rules" class="tab-panel hidden">
+    <div class="card rules">
+      <h2 class="section-title">Rules</h2>
+      <ul>
+        <li>Correct score = 3 pts</li>
+        <li>Correct goal difference = 2 pts</li>
+        <li>Correct winner / draw = 1 pt</li>
+        <li>Correct group stage winner = 5 pts per group</li>
+        <li>Correct overall winner = 20 pts</li>
+        <li>Maximum 3 pts per match</li>
+        <li>For knockout games, only score / goal diff / winner apply</li>
+        <li>Predictions lock at kickoff time</li>
+        <li>All times shown in Singapore Time (GMT+8)</li>
+      </ul>
+    </div>
+  </section>
+</div>
 
-          if (home === "" || away === "") {
-            showMessage("Please enter both scores.", "error");
-            return;
-          }
+<script type="module">
+  import { initializeApp, getApps, getApp }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getFirestore,
+    collection, addDoc, getDocs, getDoc,
+    setDoc, updateDoc, doc,
+    query, orderBy, serverTimestamp, onSnapshot,
+    writeBatch
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-          await savePrediction(matchId, home, away);
-        });
-      });
+  // ─── REPLACE WITH YOUR REAL FIREBASE CONFIG ───────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_AUTH_DOMAIN",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+  };
+  // ──────────────────────────────────────────────────────────────────────────
+
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  let currentUser      = null;
+  let matches          = [];
+  let predictions      = [];
+  let users            = [];
+  let bonusPredictions = [];
+  let appSettings      = { actualGroupWinners: {}, actualOverallWinner: "" };
+
+  const DEFAULT_GROUPS = [
+    "Group A","Group B","Group C","Group D",
+    "Group E","Group F","Group G","Group H",
+    "Group I","Group J","Group K","Group L"
+  ];
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  function showMessage(text, type = "info") {
+    const box = document.getElementById("messageBox");
+    box.textContent = text;
+    box.className   = "notice";
+    if (type === "success") box.classList.add("success-msg");
+    if (type === "error")   box.classList.add("danger-msg");
+    box.classList.remove("hidden");
+    setTimeout(() => box.classList.add("hidden"), 3000);
+  }
+
+  function slugify(str) {
+    // FIX: normalise to lower-case first so "Alice" and "alice" don't collide
+    return str.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  }
+
+  function getCurrentUserName() {
+    return localStorage.getItem("predictor_name") || "";
+  }
+
+  async function ensureUser() {
+    const name = getCurrentUserName();
+    if (!name) return null;
+    const userId = slugify(name);
+    currentUser = { id: userId, name };
+
+    await setDoc(doc(db, "users", userId), {
+      id: userId, name,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    return currentUser;
+  }
+
+  function formatSingaporeTime(dateStr) {
+    return new Intl.DateTimeFormat("en-SG", {
+      timeZone: "Asia/Singapore",
+      year: "numeric", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    }).format(new Date(dateStr));
+  }
+
+  function isLocked(kickoffTime) {
+    return new Date() >= new Date(kickoffTime);
+  }
+
+  function getMatchOutcome(home, away) {
+    if (home > away) return "home";
+    if (away > home) return "away";
+    return "draw";
+  }
+
+  function calculateMatchPoints(predHome, predAway, actualHome, actualAway) {
+    if (predHome === actualHome && predAway === actualAway) return 3;
+    const predDiff    = predHome  - predAway;
+    const actualDiff  = actualHome - actualAway;
+    if (predDiff === actualDiff) return 2;
+    if (getMatchOutcome(predHome, predAway) === getMatchOutcome(actualHome, actualAway)) return 1;
+    return 0;
+  }
+
+  function getPredictionForMatch(matchId, userId) {
+    return predictions.find(p => p.matchId === matchId && p.userId === userId);
+  }
+
+  function getBonusPrediction(userId) {
+    return bonusPredictions.find(p => p.userId === userId)
+      || { userId, groupWinners: {}, overallWinner: "" };
+  }
+
+  // ── Save prediction ────────────────────────────────────────────────────────
+  // FIX: do NOT calculate pointsAwarded here — the match may not have a result
+  // yet. Points are set exclusively by recalculateAllScores().
+  async function savePrediction(matchId, homeScore, awayScore) {
+    if (!currentUser) { showMessage("Please save your name first.", "error"); return; }
+
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    if (isLocked(match.kickoffTime)) {
+      showMessage("Prediction is locked for this match.", "error");
+      return;
     }
 
-    function renderLeaderboard() {
-      const wrap = document.getElementById("leaderboardWrap");
+    // FIX: guard against negative values
+    const home = Math.max(0, Number(homeScore));
+    const away = Math.max(0, Number(awayScore));
 
-      const rows = users
-        .map(u => ({
-          userId: u.id,
-          userName: u.name,
-          matchPoints: u.leaderboard?.matchPoints || 0,
-          bonusPoints: u.leaderboard?.bonusPoints || 0,
-          totalPoints: u.leaderboard?.totalPoints || 0
-        }))
-        .sort((a, b) => b.totalPoints - a.totalPoints || b.matchPoints - a.matchPoints || a.userName.localeCompare(b.userName));
+    const predictionId = `${currentUser.id}_${matchId}`;
+    await setDoc(doc(db, "predictions", predictionId), {
+      id:           predictionId,
+      userId:       currentUser.id,
+      userName:     currentUser.name,
+      matchId,
+      predHomeScore: home,
+      predAwayScore: away,
+      // FIX: only award points if the match already has a result
+      pointsAwarded: match.completed
+        ? calculateMatchPoints(home, away, Number(match.resultHomeScore), Number(match.resultAwayScore))
+        : 0,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
 
-      if (!rows.length) {
-        wrap.innerHTML = `<div class="muted">No users yet.</div>`;
-        return;
+    showMessage("Prediction saved.", "success");
+  }
+
+  // ── Save bonus ─────────────────────────────────────────────────────────────
+  async function saveBonusPrediction(groupWinners, overallWinner) {
+    if (!currentUser) { showMessage("Please save your name first.", "error"); return; }
+
+    await setDoc(doc(db, "bonusPredictions", currentUser.id), {
+      userId:       currentUser.id,
+      userName:     currentUser.name,
+      groupWinners,
+      overallWinner,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    showMessage("Bonus picks saved.", "success");
+  }
+
+  // ── Add match ──────────────────────────────────────────────────────────────
+  async function addMatch() {
+    const homeTeam    = document.getElementById("homeTeam").value.trim();
+    const awayTeam    = document.getElementById("awayTeam").value.trim();
+    const kickoffTime = document.getElementById("kickoffTime").value;
+    const stage       = document.getElementById("stage").value;
+    const groupName   = document.getElementById("groupName").value.trim();
+
+    if (!homeTeam || !awayTeam || !kickoffTime) {
+      showMessage("Please fill in all required match fields.", "error");
+      return;
+    }
+
+    await addDoc(collection(db, "matches"), {
+      homeTeam, awayTeam,
+      kickoffTime: new Date(kickoffTime).toISOString(),
+      stage,
+      groupName: stage === "group" ? groupName : "",
+      resultHomeScore: null,
+      resultAwayScore: null,
+      completed: false,
+      createdAt: serverTimestamp()
+    });
+
+    document.getElementById("homeTeam").value    = "";
+    document.getElementById("awayTeam").value    = "";
+    document.getElementById("kickoffTime").value = "";
+    document.getElementById("groupName").value   = "";
+
+    showMessage("Match added.", "success");
+  }
+
+  // ── Save result ────────────────────────────────────────────────────────────
+  async function saveResult() {
+    const matchId = document.getElementById("resultMatchSelect").value;
+    const home    = document.getElementById("resultHomeScore").value;
+    const away    = document.getElementById("resultAwayScore").value;
+
+    if (!matchId || home === "" || away === "") {
+      showMessage("Please select a match and enter both scores.", "error");
+      return;
+    }
+
+    // FIX: guard negatives
+    const homeScore = Math.max(0, Number(home));
+    const awayScore = Math.max(0, Number(away));
+
+    await updateDoc(doc(db, "matches", matchId), {
+      resultHomeScore: homeScore,
+      resultAwayScore: awayScore,
+      completed: true,
+      updatedAt: serverTimestamp()
+    });
+
+    await recalculateAllScores();
+    showMessage("Result saved and scores recalculated.", "success");
+  }
+
+  // ── Admin: group winners ───────────────────────────────────────────────────
+  async function saveActualGroupWinners() {
+    const actualGroupWinners = {};
+    DEFAULT_GROUPS.forEach(group => {
+      actualGroupWinners[group] =
+        document.getElementById(`actual-${slugify(group)}`)?.value?.trim() || "";
+    });
+
+    await setDoc(doc(db, "settings", "app"), {
+      actualGroupWinners,
+      actualOverallWinner: appSettings.actualOverallWinner || "",
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    await recalculateAllScores();
+    showMessage("Actual group winners saved.", "success");
+  }
+
+  // ── Admin: overall winner ──────────────────────────────────────────────────
+  async function saveActualOverallWinner() {
+    const winner = document.getElementById("actualOverallWinnerInput").value.trim();
+
+    await setDoc(doc(db, "settings", "app"), {
+      actualGroupWinners:  appSettings.actualGroupWinners || {},
+      actualOverallWinner: winner,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    await recalculateAllScores();
+    showMessage("Actual overall winner saved.", "success");
+  }
+
+  // ── Recalculate all scores (batched writes) ────────────────────────────────
+  // FIX: use writeBatch to avoid a flood of individual setDoc calls and
+  // prevent partial-write race conditions.
+  async function recalculateAllScores() {
+    const userTotals = {};
+
+    users.forEach(u => {
+      userTotals[u.id] = {
+        userId: u.id, userName: u.name,
+        matchPoints: 0, bonusPoints: 0, totalPoints: 0
+      };
+    });
+
+    // --- match points ---
+    const predBatch = writeBatch(db);
+
+    for (const p of predictions) {
+      const match = matches.find(m => m.id === p.matchId);
+      if (!match || !match.completed) continue;
+
+      const points = calculateMatchPoints(
+        Number(p.predHomeScore), Number(p.predAwayScore),
+        Number(match.resultHomeScore), Number(match.resultAwayScore)
+      );
+
+      if (!userTotals[p.userId]) {
+        userTotals[p.userId] = {
+          userId: p.userId,
+          userName: p.userName || p.userId,
+          matchPoints: 0, bonusPoints: 0, totalPoints: 0
+        };
       }
 
-      wrap.innerHTML = `
-        <table>
-          <thead>
+      userTotals[p.userId].matchPoints += points;
+
+      // FIX: batch the pointsAwarded write instead of one setDoc per prediction
+      predBatch.set(
+        doc(db, "predictions", p.id),
+        { pointsAwarded: points },
+        { merge: true }
+      );
+    }
+
+    await predBatch.commit();
+
+    // --- bonus points ---
+    for (const bp of bonusPredictions) {
+      if (!userTotals[bp.userId]) {
+        userTotals[bp.userId] = {
+          userId: bp.userId,
+          userName: bp.userName || bp.userId,
+          matchPoints: 0, bonusPoints: 0, totalPoints: 0
+        };
+      }
+
+      let bonus = 0;
+      const actualGroups    = appSettings.actualGroupWinners || {};
+      const predictedGroups = bp.groupWinners || {};
+
+      for (const group of DEFAULT_GROUPS) {
+        if (
+          actualGroups[group] && predictedGroups[group] &&
+          actualGroups[group].trim().toLowerCase() ===
+          predictedGroups[group].trim().toLowerCase()
+        ) bonus += 5;
+      }
+
+      if (
+        appSettings.actualOverallWinner && bp.overallWinner &&
+        appSettings.actualOverallWinner.trim().toLowerCase() ===
+        bp.overallWinner.trim().toLowerCase()
+      ) bonus += 20;
+
+      userTotals[bp.userId].bonusPoints = bonus;
+    }
+
+    // --- persist totals (batched) ---
+    const userBatch = writeBatch(db);
+
+    for (const uid of Object.keys(userTotals)) {
+      userTotals[uid].totalPoints =
+        userTotals[uid].matchPoints + userTotals[uid].bonusPoints;
+
+      userBatch.set(
+        doc(db, "users", uid),
+        { leaderboard: userTotals[uid], updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+    }
+
+    await userBatch.commit();
+  }
+
+  // ── Render: matches ────────────────────────────────────────────────────────
+  function renderMatches() {
+    const wrap = document.getElementById("matchesList");
+    wrap.innerHTML = "";
+
+    if (!matches.length) {
+      wrap.innerHTML = '<div class="muted">No matches added yet.</div>';
+      return;
+    }
+
+    matches.forEach(match => {
+      const locked = isLocked(match.kickoffTime);
+      const pred   = currentUser ? getPredictionForMatch(match.id, currentUser.id) : null;
+
+      const div = document.createElement("div");
+      div.className = "match";
+
+      let statusPill = `<span class="pill ${locked ? "locked" : "open"}">${locked ? "Locked" : "Open"}</span>`;
+      if (match.completed) statusPill = '<span class="pill done">Result Added</span>';
+
+      div.innerHTML = `
+        <div class="between">
+          <div>
+            <div class="teams">${match.homeTeam} vs ${match.awayTeam}</div>
+            <div class="small">
+              ${formatSingaporeTime(match.kickoffTime)} &bull; ${match.stage.toUpperCase()}
+              ${match.groupName ? " &bull; " + match.groupName : ""}
+            </div>
+          </div>
+          <div>${statusPill}</div>
+        </div>
+        <div class="score-box">
+          <input type="number" min="0" id="home-${match.id}"
+            value="${pred?.predHomeScore ?? ""}" ${locked ? "disabled" : ""} />
+          <span>-</span>
+          <input type="number" min="0" id="away-${match.id}"
+            value="${pred?.predAwayScore ?? ""}" ${locked ? "disabled" : ""} />
+          <button ${locked ? "disabled" : ""} data-save-match="${match.id}">Save Prediction</button>
+        </div>
+        ${match.completed ? `
+          <div class="notice">
+            Final result: <strong>${match.resultHomeScore} - ${match.resultAwayScore}</strong>
+            ${pred ? ` &bull; Your points: <strong>${pred.pointsAwarded ?? 0}</strong>` : ""}
+          </div>` : ""}
+      `;
+
+      wrap.appendChild(div);
+    });
+
+    // FIX: attach listeners after DOM is built, not via inline onclick
+    document.querySelectorAll("[data-save-match]").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const matchId = e.target.getAttribute("data-save-match");
+        const home    = document.getElementById(`home-${matchId}`).value;
+        const away    = document.getElementById(`away-${matchId}`).value;
+
+        if (home === "" || away === "") {
+          showMessage("Please enter both scores.", "error");
+          return;
+        }
+
+        await savePrediction(matchId, home, away);
+      });
+    });
+  }
+
+  // ── Render: leaderboard ────────────────────────────────────────────────────
+  function renderLeaderboard() {
+    const wrap = document.getElementById("leaderboardWrap");
+
+    const rows = users
+      .map(u => ({
+        userId:      u.id,
+        userName:    u.name,
+        matchPoints: u.leaderboard?.matchPoints  || 0,
+        bonusPoints: u.leaderboard?.bonusPoints  || 0,
+        totalPoints: u.leaderboard?.totalPoints  || 0
+      }))
+      .sort((a, b) =>
+        b.totalPoints - a.totalPoints ||
+        b.matchPoints - a.matchPoints ||
+        a.userName.localeCompare(b.userName)
+      );
+
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="muted">No users yet.</div>';
+      return;
+    }
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Name</th><th>Match Points</th>
+            <th>Bonus Points</th><th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((r, i) => `
             <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Match Points</th>
-              <th>Bonus Points</th>
-              <th>Total</th>
+              <td class="${i === 0 ? "leader-1" : ""}">${i + 1}</td>
+              <td class="${i === 0 ? "leader-1" : ""}">${r.userName}</td>
+              <td>${r.matchPoints}</td>
+              <td>${r.bonusPoints}</td>
+              <td><strong>${r.totalPoints}</strong></td>
             </tr>
-          </thead>
-          <tbody>
-            \${rows.map((r, i) => `
-              <tr>
-                <td class="\${i === 0 ? "leader-1" : ""}">\${i + 1}</td>
-                <td class="\${i === 0 ? "leader-1" : ""}">\${r.userName}</td>
-                <td>\${r.matchPoints}</td>
-                <td>\${r.bonusPoints}</td>
-                <td><strong>\${r.totalPoints}</strong></td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      `;
-    }
-
-    function renderBonusForms() {
-      const groupWrap = document.getElementById("groupWinnersForm");
-      const overallWrap = document.getElementById("overallWinnerForm");
-      const currentBonus = currentUser ? getBonusPrediction(currentUser.id) : { groupWinners: {}, overallWinner: "" };
-
-      groupWrap.innerHTML = `
-        <div class="grid">
-          \${DEFAULT_GROUPS.map(group => `
-            <div class="row">
-              <label style="min-width:90px;">\${group}</label>
-              <input id="group-pick-\${slugify(group)}" value="\${currentBonus.groupWinners?.[group] || ""}" placeholder="Team name" />
-            </div>
           `).join("")}
-          <button id="saveGroupWinnersBtn" class="success">Save Group Winner Picks</button>
-        </div>
-      `;
+        </tbody>
+      </table>`;
+  }
 
-      overallWrap.innerHTML = `
-        <div class="grid">
-          <input id="overallWinnerPick" value="\${currentBonus.overallWinner || ""}" placeholder="Pick the overall winner" />
-          <button id="saveOverallWinnerBtn" class="success">Save Overall Winner</button>
-        </div>
-      `;
+  // ── Render: bonus forms ────────────────────────────────────────────────────
+  function renderBonusForms() {
+    const groupWrap   = document.getElementById("groupWinnersForm");
+    const overallWrap = document.getElementById("overallWinnerForm");
+    const currentBonus = currentUser
+      ? getBonusPrediction(currentUser.id)
+      : { groupWinners: {}, overallWinner: "" };
 
-      document.getElementById("saveGroupWinnersBtn").addEventListener("click", async () => {
-        const existing = getBonusPrediction(currentUser.id);
-        const groupWinners = {};
-        DEFAULT_GROUPS.forEach(group => {
-          groupWinners[group] = document.getElementById(`group-pick-\${slugify(group)}`).value.trim();
-        });
-        await saveBonusPrediction(groupWinners, existing.overallWinner || "");
+    groupWrap.innerHTML = `
+      <div class="grid">
+        ${DEFAULT_GROUPS.map(group => `
+          <div class="row">
+            <label style="min-width:90px;">${group}</label>
+            <input id="group-pick-${slugify(group)}"
+              value="${currentBonus.groupWinners?.[group] || ""}"
+              placeholder="Team name" />
+          </div>
+        `).join("")}
+        <button id="saveGroupWinnersBtn" class="success">Save Group Winner Picks</button>
+      </div>`;
+
+    overallWrap.innerHTML = `
+      <div class="grid">
+        <input id="overallWinnerPick"
+          value="${currentBonus.overallWinner || ""}"
+          placeholder="Pick the overall winner" />
+        <button id="saveOverallWinnerBtn" class="success">Save Overall Winner</button>
+      </div>`;
+
+    document.getElementById("saveGroupWinnersBtn").addEventListener("click", async () => {
+      if (!currentUser) { showMessage("Please save your name first.", "error"); return; }
+      const existing     = getBonusPrediction(currentUser.id);
+      const groupWinners = {};
+      DEFAULT_GROUPS.forEach(group => {
+        groupWinners[group] =
+          document.getElementById(`group-pick-${slugify(group)}`).value.trim();
       });
-
-      document.getElementById("saveOverallWinnerBtn").addEventListener("click", async () => {
-        const existing = getBonusPrediction(currentUser.id);
-        const overallWinner = document.getElementById("overallWinnerPick").value.trim();
-        await saveBonusPrediction(existing.groupWinners || {}, overallWinner);
-      });
-    }
-
-    function renderAdmin() {
-      const select = document.getElementById("resultMatchSelect");
-      select.innerHTML = matches.map(m => `
-        <option value="\${m.id}">
-          \${m.homeTeam} vs \${m.awayTeam} - \${formatSingaporeTime(m.kickoffTime)}
-        </option>
-      `).join("");
-
-      const adminGroup = document.getElementById("adminGroupWinners");
-      adminGroup.innerHTML = `
-        <div class="grid">
-          \${DEFAULT_GROUPS.map(group => `
-            <div class="row">
-              <label style="min-width:90px;">\${group}</label>
-              <input id="actual-\${slugify(group)}" value="\${appSettings.actualGroupWinners?.[group] || ""}" placeholder="Actual winner" />
-            </div>
-          `).join("")}
-          <button id="saveActualGroupWinnersBtn" class="success">Save Actual Group Winners</button>
-        </div>
-      `;
-
-      const adminOverall = document.getElementById("adminOverallWinner");
-      adminOverall.innerHTML = `
-        <div class="grid">
-          <input id="actualOverallWinnerInput" value="\${appSettings.actualOverallWinner || ""}" placeholder="Actual overall winner" />
-          <button id="saveActualOverallWinnerBtn" class="success">Save Actual Overall Winner</button>
-        </div>
-      `;
-
-      document.getElementById("saveActualGroupWinnersBtn").addEventListener("click", saveActualGroupWinners);
-      document.getElementById("saveActualOverallWinnerBtn").addEventListener("click", saveActualOverallWinner);
-    }
-
-    function renderAll() {
-      document.getElementById("displayName").value = getCurrentUserName();
-      renderMatches();
-      renderLeaderboard();
-      renderBonusForms();
-      renderAdmin();
-    }
-
-    /*
-      ============================================================
-      EVENTS
-      ============================================================
-    */
-    document.getElementById("saveNameBtn").addEventListener("click", async () => {
-      const name = document.getElementById("displayName").value.trim();
-      if (!name) {
-        showMessage("Please enter your name.", "error");
-        return;
-      }
-      localStorage.setItem("predictor_name", name);
-      await ensureUser();
-      await loadAllData();
-      renderAll();
-      showMessage("Name saved.", "success");
+      await saveBonusPrediction(groupWinners, existing.overallWinner || "");
     });
 
-    document.getElementById("addMatchBtn").addEventListener("click", addMatch);
-    document.getElementById("saveResultBtn").addEventListener("click", saveResult);
+    document.getElementById("saveOverallWinnerBtn").addEventListener("click", async () => {
+      if (!currentUser) { showMessage("Please save your name first.", "error"); return; }
+      const existing     = getBonusPrediction(currentUser.id);
+      const overallWinner = document.getElementById("overallWinnerPick").value.trim();
+      await saveBonusPrediction(existing.groupWinners || {}, overallWinner);
+    });
+  }
 
-    document.querySelectorAll(".tab-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
+  // ── Render: admin ──────────────────────────────────────────────────────────
+  // FIX: result dropdown is rebuilt here on every renderAll(), so it always
+  // reflects the current matches list.
+  function renderAdmin() {
+    const select = document.getElementById("resultMatchSelect");
+    select.innerHTML = matches.length
+      ? matches.map(m => `
+          <option value="${m.id}">
+            ${m.homeTeam} vs ${m.awayTeam} — ${formatSingaporeTime(m.kickoffTime)}
+          </option>`).join("")
+      : '<option value="">No matches yet</option>';
 
-        const tab = btn.getAttribute("data-tab");
-        document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.add("hidden"));
-        document.getElementById(`tab-\${tab}`).classList.remove("hidden");
-      });
+    const adminGroup = document.getElementById("adminGroupWinners");
+    adminGroup.innerHTML = `
+      <div class="grid">
+        ${DEFAULT_GROUPS.map(group => `
+          <div class="row">
+            <label style="min-width:90px;">${group}</label>
+            <input id="actual-${slugify(group)}"
+              value="${appSettings.actualGroupWinners?.[group] || ""}"
+              placeholder="Actual winner" />
+          </div>
+        `).join("")}
+        <button id="saveActualGroupWinnersBtn" class="success">Save Actual Group Winners</button>
+      </div>`;
+
+    const adminOverall = document.getElementById("adminOverallWinner");
+    adminOverall.innerHTML = `
+      <div class="grid">
+        <input id="actualOverallWinnerInput"
+          value="${appSettings.actualOverallWinner || ""}"
+          placeholder="Actual overall winner" />
+        <button id="saveActualOverallWinnerBtn" class="success">Save Actual Overall Winner</button>
+      </div>`;
+
+    document.getElementById("saveActualGroupWinnersBtn")
+      .addEventListener("click", saveActualGroupWinners);
+    document.getElementById("saveActualOverallWinnerBtn")
+      .addEventListener("click", saveActualOverallWinner);
+  }
+
+  // ── Render all ─────────────────────────────────────────────────────────────
+  function renderAll() {
+    document.getElementById("displayName").value = getCurrentUserName();
+    renderMatches();
+    renderLeaderboard();
+    renderBonusForms();
+    renderAdmin();
+  }
+
+  // ── Real-time listeners ────────────────────────────────────────────────────
+  // FIX: removed the preload() + subscribeRealtime() double-fetch pattern.
+  // onSnapshot fires immediately with the current data, so a separate preload
+  // is redundant and causes two full reads on startup.
+  function subscribeRealtime() {
+    onSnapshot(
+      query(collection(db, "matches"), orderBy("kickoffTime")),
+      (snap) => { matches = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderAll(); }
+    );
+
+    onSnapshot(collection(db, "predictions"), (snap) => {
+      predictions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderAll();
     });
 
-    /*
-      ============================================================
-      INIT
-      ============================================================
-    */
-    async function init() {
-      await loadAllData();
+    onSnapshot(collection(db, "users"), (snap) => {
+      users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderAll();
-    }
+    });
 
-    init();
-  </script>
+    onSnapshot(collection(db, "bonusPredictions"), (snap) => {
+      bonusPredictions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderAll();
+    });
+
+    // FIX: safe fallback when the settings document doesn't exist yet
+    onSnapshot(doc(db, "settings", "app"), (snap) => {
+      appSettings = snap.exists()
+        ? {
+            actualGroupWinners:  snap.data().actualGroupWinners  || {},
+            actualOverallWinner: snap.data().actualOverallWinner || ""
+          }
+        : { actualGroupWinners: {}, actualOverallWinner: "" };
+      renderAll();
+    });
+  }
+
+  // ── Event listeners ────────────────────────────────────────────────────────
+  document.getElementById("saveNameBtn").addEventListener("click", async () => {
+    const name = document.getElementById("displayName").value.trim();
+    if (!name) { showMessage("Please enter your name.", "error"); return; }
+    localStorage.setItem("predictor_name", name);
+    await ensureUser();
+    showMessage("Name saved.", "success");
+    renderAll();
+  });
+
+  document.getElementById("addMatchBtn").addEventListener("click", addMatch);
+  document.getElementById("saveResultBtn").addEventListener("click", saveResult);
+
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.getAttribute("data-tab");
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.add("hidden"));
+      document.getElementById(`tab-${tab}`).classList.remove("hidden");
+    });
+  });
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  async function init() {
+    await ensureUser();
+    subscribeRealtime(); // snapshots fire immediately — no separate preload needed
+  }
+
+  init();
+</script>
 </body>
 </html>

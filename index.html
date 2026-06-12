@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>World Cup Predictor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0a1628;
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a3a5c, #c8a84b);
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 { font-size: 1.8rem; letter-spacing: 2px; }
+    header p  { font-size: 0.85rem; opacity: 0.8; margin-top: 4px; }
+
+    .sync-bar {
+      background: #0d1f35;
+      text-align: center;
+      padding: 6px;
+      font-size: 0.75rem;
+      color: #8baac8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .sync-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #27ae60;
+      display: inline-block;
+      animation: pulse 2s infinite;
+    }
+
+    .sync-dot.offline { background: #e74c3c; animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      background: #0d1f35;
+      padding: 12px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid #1e3a5c;
+    }
+
+    nav button {
+      padding: 8px 18px;
+      border: 2px solid #c8a84b;
+      background: transparent;
+      color: #c8a84b;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    nav button:hover, nav button.active {
+      background: #c8a84b;
+      color: #0a1628;
+      font-weight: bold;
+    }
+
+    .page { display: none; padding: 24px; max-width: 900px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    h2 {
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      color: #c8a84b;
+      border-bottom: 1px solid #1e3a5c;
+      padding-bottom: 8px;
+    }
+
+    .card {
+      background: #0d1f35;
+      border: 1px solid #1e3a5c;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      align-items: flex-end;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    label { font-size: 0.75rem; color: #8baac8; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    input, select {
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid #1e3a5c;
+      background: #0a1628;
+      color: #fff;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #c8a84b;
+    }
+
+    .btn {
+      padding: 9px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: bold;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-gold  { background: #c8a84b; color: #0a1628; }
+    .btn-green { background: #27ae60; color: #fff; }
+    .btn-red   { background: #e74c3c; color: #fff; }
+    .btn-blue  { background: #2980b9; color: #fff; }
+    .btn-sm    { padding: 6px 12px; font-size: 0.78rem; }
+
+    /* Login Screen */
+    #loginScreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      padding: 24px;
+    }
+
+    .login-card {
+      background: #0d1f35;
+      border: 1px solid #1e3a5c;
+      border-radius: 16px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-card .logo { font-size: 3rem; margin-bottom: 12px; }
+    .login-card h2 { color: #c8a84b; margin-bottom: 6px; border: none; }
+    .login-card p  { color: #8baac8; font-size: 0.85rem; margin-bottom: 24px; }
+
+    .login-card input {
+      margin-bottom: 12px;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    /* Admin badge */
+    .admin-badge {
+      background: #c8a84b;
+      color: #0a1628;
+      font-size: 0.68rem;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 8px;
+      margin-left: 6px;
+      text-transform: uppercase;
+    }
+
+    /* Players */
+    .players-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+
+    .player-chip {
+      background: linear-gradient(135deg, #1a3a5c, #0d2a45);
+      border: 1px solid #2a4a6c;
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .player-chip.online-now { border-color: #27ae60; }
+
+    /* Matches */
+    .match-item {
+      background: #0a1628;
+      border: 1px solid #1e3a5c;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .match-item:hover { border-color: #2a4a6c; }
+
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .match-teams { font-size: 1.05rem; font-weight: bold; }
+    .match-meta  { font-size: 0.78rem; color: #8baac8; margin-top: 4px; }
+
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+    .badge {
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+
+    .badge-pending { background: #e67e22; color: #fff; }
+    .badge-done    { background: #27ae60; color: #fff; }
+    .badge-preds   { background: #2980b9; color: #fff; }
+
+    .result-score {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #c8a84b;
+      text-align: center;
+      margin: 12px 0 4px;
+      letter-spacing: 6px;
+    }
+
+    /* Predictions */
+    .pred-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #1a3050;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .pred-row:last-child { border-bottom: none; }
+    .pred-name { min-width: 100px; font-size: 0.9rem; font-weight: 500; }
+
+    .score-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score-inputs input {
+      width: 56px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 8px 4px;
+    }
+
+    .score-inputs .vs {
+      font-size: 1.1rem;
+      color: #c8a84b;
+      font-weight: bold;
+    }
+
+    .pts-pill {
+      font-size: 0.78rem;
+      font-weight: bold;
+      padding: 3px 10px;
+      border-radius: 10px;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .pts-3 { background: #1a5c2a; color: #4ade80; }
+    .pts-2 { background: #1a3a5c; color: #60a5fa; }
+    .pts-1 { background: #5c3a1a; color: #fb923c; }
+    .pts-0 { background: #2a1a1a; color: #777; }
+
+    /* Leaderboard */
+    .lb-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .lb-table th {
+      background: #1a3a5c;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #c8a84b;
+      letter-spacing: 0.5px;
+    }
+
+    .lb-table td {
+      padding: 11px 12px;
+      border-bottom: 1px solid #1a3050;
+    }
+
+    .lb-table tr:last-child td { border-bottom: none; }
+    .lb-table tbody tr:hover td { background: #0d1f35; }
+
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+
+    .rank-1 { background: #FFD700; color: #000; }
+    .rank-2 { background: #C0C0C0; color: #000; }
+    .rank-3 { background: #CD7F32; color: #fff; }
+    .rank-n { background: #1a3a5c; color: #8baac8; }
+
+    .pts-total {
+      background: linear-gradient(135deg, #1a3a5c, #0d2a45);
+      border: 1px solid #c8a84b;
+      border-radius: 8px;
+      padding: 3px 12px;
+      font-weight: bold;
+      color: #c8a84b;
+      font-size: 1rem;
+    }
+
+    .breakdown-card {
+      background: #0d1f35;
+      border: 1px solid #1e3a5c;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .breakdown-title {
+      font-weight: bold;
+      font-size: 1rem;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .final-score-badge {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #c8a84b;
+      background: #0a1628;
+      padding: 4px 14px;
+      border-radius: 8px;
+      border: 1px solid #1e3a5c;
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #0a1628;
+      border: 1px solid #1e3a5c;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #8baac8;
+      padding: 40px 20px;
+      font-size: 0.9rem;
+    }
+
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+    .result-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .result-form input {
+      width: 60px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .match-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid #1e3a5c;
+      border-top-color: #c8a84b;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 28px;
+      border-radius: 20px;
+      font-weight: bold;
+      z-index: 9999;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      display: none;
+      white-space: nowrap;
+      color: #fff;
+    }
+
+    /* Admin-only sections */
+    .admin-only { display: none; }
+
+    /* My prediction highlight */
+    .my-pred-row { background: #0f2540; border-radius: 8px; padding: 10px 8px; }
+
+    /* Locked prediction */
+    .locked-input {
+      background: #111e30 !important;
+      color: #8baac8 !important;
+      cursor: not-allowed;
+      border-color: #1e3a5c !important;
+    }
+
+    @media (max-width: 500px) {
+      header h1 { font-size: 1.3rem; }
+      .score-inputs input { width: 46px; }
+      nav button { padding: 7px 12px; font-size: 0.78rem; }
+      .login-card { padding: 24px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ LOGIN SCREEN ══════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="logo">⚽</div>
+    <h2>World Cup Predictor</h2>
+    <p>Enter your name to join the game</p>
+    <input id="loginName" type="text" placeholder="Your name e.g. Alex"
+           maxlength="20"
+           onkeydown="if(event.key==='Enter') joinGame()"/>
+    <div style="margin-bottom:12px">
+      <input id="adminCode" type="password" placeholder="Admin code (optional)"
+             onkeydown="if(event.key==='Enter') joinGame()"/>
+    </div>
+    <button class="btn btn-gold" style="width:100%;font-size:1rem;padding:12px" onclick="joinGame()">
+      🚀 Join Game
+    </button>
+    <p style="margin-top:16px;font-size:0.72rem;color:#555">
+      Admin code is set in the app config.<br/>Leave blank to join as a regular player.
+    </p>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="mainApp" style="display:none">
+
+  <header>
+    <h1>⚽ World Cup Predictor</h1>
+    <p id="headerSub">Predict · Compete · Win</p>
+  </header>
+
+  <div class="sync-bar">
+    <span class="sync-dot" id="syncDot"></span>
+    <span id="syncText">Connecting…</span>
+    <span style="margin-left:12px;color:#555">|</span>
+    <span id="currentUserLabel" style="margin-left:12px;color:#c8a84b;font-weight:bold"></span>
+    <button onclick="logout()" style="margin-left:12px;background:none;border:none;color:#8baac8;cursor:pointer;font-size:0.75rem">
+      🚪 Leave
+    </button>
+  </div>
+
+  <nav id="mainNav">
+    <button class="active" onclick="showPage('players', this)">👥 Players</button>
+    <button onclick="showPage('matches', this)">🏟️ Matches</button>
+    <button onclick="showPage('predict', this)">🎯 Predictions</button>
+    <button onclick="showPage('leaderboard', this)">🏆 Leaderboard</button>
+  </nav>
+
+  <!-- PLAYERS PAGE -->
+  <div id="page-players" class="page active">
+    <div class="card admin-only" id="addPlayerCard">
+      <h2>👥 Add Players <span class="admin-badge">Admin</span></h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Player Name</label>
+          <input id="playerName" type="text" placeholder="e.g. Alex"
+                 onkeydown="if(event.key==='Enter') addPlayer()"/>
+        </div>
+        <button class="btn btn-gold" onclick="addPlayer()">+ Add Player</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Current Players</h2>
+      <div id="playersList">
+        <div class="empty-state"><div class="icon">👥</div>Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATCHES PAGE -->
+  <div id="page-matches" class="page">
+    <div class="card admin-only" id="addMatchCard">
+      <h2>🏟️ Add Match <span class="admin-badge">Admin</span></h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Home Team</label>
+          <input id="homeTeam" type="text" placeholder="e.g. Brazil"/>
+        </div>
+        <div class="form-group">
+          <label>Away Team</label>
+          <input id="awayTeam" type="text" placeholder="e.g. Argentina"/>
+        </div>
+        <div class="form-group" style="max-width:180px">
+          <label>Match Date & Time</label>
+          <input id="matchDate" type="datetime-local"/>
+        </div>
+        <button class="btn btn-gold" onclick="addMatch()">+ Add Match</button>
+      </div>
+    </div>
+    <div id="matchList">
+      <div class="empty-state"><div class="icon">🏟️</div>Loading…</div>
+    </div>
+  </div>
+
+  <!-- PREDICTIONS PAGE -->
+  <div id="page-predict" class="page">
+    <div class="card">
+      <h2>🎯 My Predictions</h2>
+      <div class="legend">
+        <div class="legend-item"><span class="pts-pill pts-3">3 pts</span> Exact score</div>
+        <div class="legend-item"><span class="pts-pill pts-2">2 pts</span> Right GD + winner</div>
+        <div class="legend-item"><span class="pts-pill pts-1">1 pt</span> Right winner only</div>
+        <div class="legend-item"><span class="pts-pill pts-0">0 pts</span> Wrong</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Select Match</label>
+          <select id="predictMatchSel" onchange="renderPredictForm()">
+            <option value="">-- Select a match --</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="predictForm"></div>
+  </div>
+
+  <!-- LEADERBOARD PAGE -->
+  <div id="page-leaderboard" class="page">
+    <div id="leaderboardContent"></div>
+    <div id="matchBreakdown"></div>
+  </div>
+
+</div><!-- end mainApp -->
+
+<div id="toast"></div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc,
+         setDoc, deleteDoc, onSnapshot,
+         serverTimestamp, getDoc }              from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ╔══════════════════════════════════════════╗
+// ║   🔧 PASTE YOUR FIREBASE CONFIG BELOW   ║
+// ╚══════════════════════════════════════════╝
+const firebaseConfig = {
+  apiKey:            "PASTE-YOUR-KEY-HERE",
+  authDomain:        "PASTE-YOUR-DOMAIN-HERE",
+  projectId:         "PASTE-YOUR-PROJECT-ID-HERE",
+  storageBucket:     "PASTE-YOUR-BUCKET-HERE",
+  messagingSenderId: "PASTE-YOUR-SENDER-ID-HERE",
+  appId:             "PASTE-YOUR-APP-ID-HERE"
+};
+
+// PASSCODE
+const ADMIN_CODE = "worldcup"; // ← Change this!
+
+// ── Firebase init ──────────────────────────
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── Collections ────────────────────────────
+const playersCol     = collection(db, 'players');
+const matchesCol     = collection(db, 'matches');
+const predictionsCol = collection(db, 'predictions');
+
+// ── Local cache ────────────────────────────
+let players     = [];
+let matches     = [];
+let predictions = {}; // { matchId: { playerName: {h,a} } }
+let currentUser = null;
+let isAdmin     = false;
+
+// ══════════════════════════════════════════
+//  LOGIN
+// ══════════════════════════════════════════
+window.joinGame = function() {
+  const name = document.getElementById('loginName').value.trim();
+  const code = document.getElementById('adminCode').value.trim();
+
+  if (!name) return toast('⚠️ Enter your name.', '#e67e22');
+  if (name.length < 2) return toast('⚠️ Name too short.', '#e67e22');
+
+  currentUser = name;
+  isAdmin     = (code === ADMIN_CODE);
+
+  // Show admin sections
+  if (isAdmin) {
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+  }
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display     = 'block';
+  document.getElementById('currentUserLabel').innerHTML =
+    `🧑 \${esc(name)}\${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}`;
+
+  startListeners();
+  toast(`👋 Welcome, \${name}!`);
+};
+
+window.logout = function() {
+  if (!confirm('Leave the game?')) return;
+  currentUser = null;
+  isAdmin     = false;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display     = 'none';
+  document.getElementById('loginName').value  = '';
+  document.getElementById('adminCode').value  = '';
+};
+
+// ══════════════════════════════════════════
+//  REAL-TIME LISTENERS
+// ══════════════════════════════════════════
+function startListeners() {
+  // Players
+  onSnapshot(playersCol, snap => {
+    players = snap.docs.map(d => d.data().name).sort();
+    renderPlayers();
+    renderPredictPage();
+  }, () => setOffline());
+
+  // Matches
+  onSnapshot(matchesCol, snap => {
+    matches = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    renderMatchList();
+    renderPredictPage();
+    setOnline();
+  }, () => setOffline());
+
+  // Predictions
+  onSnapshot(predictionsCol, snap => {
+    predictions = {};
+    snap.docs.forEach(d => {
+      const data = d.data();
+      if (!predictions[data.matchId]) predictions[data.matchId] = {};
+      predictions[data.matchId][data.player] = { h: data.h, a: data.a };
+    });
+    renderPredictForm();
+    const activePage = document.querySelector('.page.active');
+    if (activePage && activePage.id === 'page-leaderboard') renderLeaderboard();
+  });
+}
+
+function setOnline()  {
+  document.getElementById('syncDot').classList.remove('offline');
+  document.getElementById('syncText').textContent = 'Live — synced';
+}
+
+function setOffline() {
+  document.getElementById('syncDot').classList.add('offline');
+  document.getElementById('syncText').textContent = 'Offline';
+}
+
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
+window.showPage = function(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'leaderboard') renderLeaderboard();
+  if (name === 'predict')     renderPredictPage();
+};
+
+// ══════════════════════════════════════════
+//  PLAYERS
+// ══════════════════════════════════════════
+window.addPlayer = async function() {
+  if (!isAdmin) return toast('⛔ Admins only.', '#e74c3c');
+  const inp  = document.getElementById('playerName');
+  const name = inp.value.trim();
+  if (!name) return toast('⚠️ Enter a name.', '#e67e22');
+  if (players.includes(name)) return toast('⚠️ Player already exists.', '#e67e22');
+  try {
+    await setDoc(doc(playersCol

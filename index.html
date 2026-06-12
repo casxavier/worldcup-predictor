@@ -626,12 +626,13 @@ const firebaseConfig = {
   measurementId: "G-6MGEQGYESZ"
 };
 
-// PASSCODE
-const ADMIN_CODE = "worldcup"; // ← Change this!
-
-// ── Firebase init ──────────────────────────
+//===========INITIALISE FIREBASE=================
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
+const analytics = getAnalytics(app);
+
+// PASSCODE
+const ADMIN_CODE = "worldcup"; // ← Change this!
 
 // ── Collections ────────────────────────────
 const playersCol     = collection(db, 'players');

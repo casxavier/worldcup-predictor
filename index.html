@@ -1,760 +1,1084 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>World Cup Predictor</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Cup Prediction App</title>
+ <style>
+  :root {
+    --bg: #f6f4ed;
+    --bg-alt: #ebe7db;
+    --card: #fffdf7;
+    --card-2: #f1eee4;
+    --muted: #5f6b6d;
+    --text: #1f2937;
+    --heading: #1f315d;
+    --accent: #1f6f50;
+    --accent-2: #d97706;
+    --accent-3: #2563eb;
+    --danger: #b91c1c;
+    --border: #d9d4c7;
+    --gold: #b45309;
+    --navy: #1f315d;
+    --green: #1f6f50;
+    --light-row: #eef2ec;
+    --white: #ffffff;
+  }
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0a1628;
-      color: #fff;
-      min-height: 100vh;
+  * {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at top left, #fff8e7 0%, transparent 30%),
+      radial-gradient(circle at top right, #e8f3ec 0%, transparent 28%),
+      linear-gradient(180deg, #f8f5ee 0%, #ece7da 100%);
+    color: var(--text);
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  h1, h2, h3 {
+    margin: 0 0 12px;
+    color: var(--heading);
+  }
+
+  .grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .card {
+    background: linear-gradient(180deg, var(--card) 0%, #f8f6ef 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 10px 24px rgba(31, 49, 93, 0.08);
+  }
+
+  .row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  input, select, button, textarea {
+    background: var(--white);
+    color: var(--text);
+    border: 1px solid #cfc8b7;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  input[type="number"] {
+    width: 80px;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid rgba(37, 99, 235, 0.18);
+    border-color: var(--accent-3);
+  }
+
+  button {
+    cursor: pointer;
+    border: none;
+    background: var(--navy);
+    color: white;
+    font-weight: 700;
+    transition: 0.2s ease;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    opacity: 0.96;
+  }
+
+  button.secondary {
+    background: #6b7280;
+    color: white;
+  }
+
+  button.success {
+    background: var(--green);
+    color: white;
+  }
+
+  button.danger {
+    background: var(--danger);
+    color: white;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .muted {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #e7ecf8;
+    color: var(--navy);
+    border: 1px solid #cfd8ee;
+  }
+
+  .pill.locked {
+    background: #fbe4e4;
+    color: #991b1b;
+    border: 1px solid #f2c4c4;
+  }
+
+  .pill.open {
+    background: #e3f3ea;
+    color: var(--green);
+    border: 1px solid #bfe2cc;
+  }
+
+  .pill.done {
+    background: #e9eef9;
+    color: var(--navy);
+    border: 1px solid #c9d5f0;
+  }
+
+  .match {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+    background:
+      linear-gradient(180deg, #fffdf8 0%, var(--light-row) 100%);
+  }
+
+  .teams {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--heading);
+  }
+
+  .small {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    background: var(--white);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 10px 8px;
+    border-bottom: 1px solid #e5dfd0;
+    font-size: 14px;
+  }
+
+  th {
+    color: var(--navy);
+    background: #eef2f8;
+  }
+
+  .leader-1 {
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .section-title {
+    margin-bottom: 10px;
+    font-size: 20px;
+    color: var(--navy);
+  }
+
+  .rules ul {
+    margin: 8px 0 0 18px;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(246, 244, 237, 0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 3px solid var(--navy);
+    margin-bottom: 16px;
+  }
+
+  .topbar .container {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .tab-btn {
+    background: #e8ecf6;
+    color: var(--navy);
+    border: 1px solid #cfd8ee;
+  }
+
+  .tab-btn.active {
+    background: var(--navy);
+    color: white;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .score-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .notice {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #e8eef9;
+    color: var(--navy);
+    font-size: 13px;
+    margin-top: 10px;
+    border: 1px solid #cad7f2;
+  }
+
+  .success-msg {
+    background: #e3f3ea;
+    color: var(--green);
+    border: 1px solid #bfe2cc;
+  }
+
+  .danger-msg {
+    background: #fbe4e4;
+    color: #991b1b;
+    border: 1px solid #f2c4c4;
+  }
+
+  label {
+    color: var(--navy);
+    font-weight: 600;
+  }
+
+  strong {
+    color: var(--heading);
+  }
+
+  @media (max-width: 900px) {
+    .grid-2 {
+      grid-template-columns: 1fr;
     }
-
-    header {
-      background: linear-gradient(135deg, #1a3a5c, #c8a84b);
-      padding: 20px;
-      text-align: center;
-    }
-
-    header h1 { font-size: 1.8rem; letter-spacing: 2px; }
-    header p  { font-size: 0.85rem; opacity: 0.8; margin-top: 4px; }
-
-    .sync-bar {
-      background: #0d1f35;
-      text-align: center;
-      padding: 6px;
-      font-size: 0.75rem;
-      color: #8baac8;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .sync-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #27ae60;
-      display: inline-block;
-      animation: pulse 2s infinite;
-    }
-
-    .sync-dot.offline { background: #e74c3c; animation: none; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.3; }
-    }
-
-    nav {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      background: #0d1f35;
-      padding: 12px;
-      flex-wrap: wrap;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      border-bottom: 1px solid #1e3a5c;
-    }
-
-    nav button {
-      padding: 8px 18px;
-      border: 2px solid #c8a84b;
-      background: transparent;
-      color: #c8a84b;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: all 0.2s;
-    }
-
-    nav button:hover, nav button.active {
-      background: #c8a84b;
-      color: #0a1628;
-      font-weight: bold;
-    }
-
-    .page { display: none; padding: 24px; max-width: 900px; margin: 0 auto; }
-    .page.active { display: block; }
-
-    h2 {
-      font-size: 1.2rem;
-      margin-bottom: 16px;
-      color: #c8a84b;
-      border-bottom: 1px solid #1e3a5c;
-      padding-bottom: 8px;
-    }
-
-    .card {
-      background: #0d1f35;
-      border: 1px solid #1e3a5c;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 16px;
-    }
-
-    .form-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-      align-items: flex-end;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      flex: 1;
-      min-width: 120px;
-    }
-
-    label { font-size: 0.75rem; color: #8baac8; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    input, select {
-      padding: 9px 12px;
-      border-radius: 8px;
-      border: 1px solid #1e3a5c;
-      background: #0a1628;
-      color: #fff;
-      font-size: 0.9rem;
-      width: 100%;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: #c8a84b;
-    }
-
-    .btn {
-      padding: 9px 20px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 0.88rem;
-      font-weight: bold;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-
-    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-    .btn-gold  { background: #c8a84b; color: #0a1628; }
-    .btn-green { background: #27ae60; color: #fff; }
-    .btn-red   { background: #e74c3c; color: #fff; }
-    .btn-blue  { background: #2980b9; color: #fff; }
-    .btn-sm    { padding: 6px 12px; font-size: 0.78rem; }
-
-    /* Login Screen */
-    #loginScreen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 80vh;
-      padding: 24px;
-    }
-
-    .login-card {
-      background: #0d1f35;
-      border: 1px solid #1e3a5c;
-      border-radius: 16px;
-      padding: 36px 32px;
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-    }
-
-    .login-card .logo { font-size: 3rem; margin-bottom: 12px; }
-    .login-card h2 { color: #c8a84b; margin-bottom: 6px; border: none; }
-    .login-card p  { color: #8baac8; font-size: 0.85rem; margin-bottom: 24px; }
-
-    .login-card input {
-      margin-bottom: 12px;
-      font-size: 1rem;
-      text-align: center;
-    }
-
-    /* Admin badge */
-    .admin-badge {
-      background: #c8a84b;
-      color: #0a1628;
-      font-size: 0.68rem;
-      font-weight: bold;
-      padding: 2px 8px;
-      border-radius: 8px;
-      margin-left: 6px;
-      text-transform: uppercase;
-    }
-
-    /* Players */
-    .players-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-
-    .player-chip {
-      background: linear-gradient(135deg, #1a3a5c, #0d2a45);
-      border: 1px solid #2a4a6c;
-      border-radius: 20px;
-      padding: 8px 14px;
-      font-size: 0.85rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .player-chip.online-now { border-color: #27ae60; }
-
-    /* Matches */
-    .match-item {
-      background: #0a1628;
-      border: 1px solid #1e3a5c;
-      border-radius: 10px;
-      padding: 16px;
-      margin-bottom: 12px;
-      transition: border-color 0.2s;
-    }
-
-    .match-item:hover { border-color: #2a4a6c; }
-
-    .match-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .match-teams { font-size: 1.05rem; font-weight: bold; }
-    .match-meta  { font-size: 0.78rem; color: #8baac8; margin-top: 4px; }
-
-    .badges { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-
-    .badge {
-      font-size: 0.72rem;
-      padding: 3px 10px;
-      border-radius: 10px;
-      font-weight: bold;
-    }
-
-    .badge-pending { background: #e67e22; color: #fff; }
-    .badge-done    { background: #27ae60; color: #fff; }
-    .badge-preds   { background: #2980b9; color: #fff; }
-
-    .result-score {
-      font-size: 2rem;
-      font-weight: bold;
-      color: #c8a84b;
-      text-align: center;
-      margin: 12px 0 4px;
-      letter-spacing: 6px;
-    }
-
-    /* Predictions */
-    .pred-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #1a3050;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .pred-row:last-child { border-bottom: none; }
-    .pred-name { min-width: 100px; font-size: 0.9rem; font-weight: 500; }
-
-    .score-inputs {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .score-inputs input {
-      width: 56px;
-      text-align: center;
-      font-size: 1.1rem;
-      font-weight: bold;
-      padding: 8px 4px;
-    }
-
-    .score-inputs .vs {
-      font-size: 1.1rem;
-      color: #c8a84b;
-      font-weight: bold;
-    }
-
-    .pts-pill {
-      font-size: 0.78rem;
-      font-weight: bold;
-      padding: 3px 10px;
-      border-radius: 10px;
-      min-width: 60px;
-      text-align: center;
-    }
-
-    .pts-3 { background: #1a5c2a; color: #4ade80; }
-    .pts-2 { background: #1a3a5c; color: #60a5fa; }
-    .pts-1 { background: #5c3a1a; color: #fb923c; }
-    .pts-0 { background: #2a1a1a; color: #777; }
-
-    /* Leaderboard */
-    .lb-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-
-    .lb-table th {
-      background: #1a3a5c;
-      padding: 10px 12px;
-      text-align: left;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      color: #c8a84b;
-      letter-spacing: 0.5px;
-    }
-
-    .lb-table td {
-      padding: 11px 12px;
-      border-bottom: 1px solid #1a3050;
-    }
-
-    .lb-table tr:last-child td { border-bottom: none; }
-    .lb-table tbody tr:hover td { background: #0d1f35; }
-
-    .rank-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      font-weight: bold;
-      font-size: 0.85rem;
-    }
-
-    .rank-1 { background: #FFD700; color: #000; }
-    .rank-2 { background: #C0C0C0; color: #000; }
-    .rank-3 { background: #CD7F32; color: #fff; }
-    .rank-n { background: #1a3a5c; color: #8baac8; }
-
-    .pts-total {
-      background: linear-gradient(135deg, #1a3a5c, #0d2a45);
-      border: 1px solid #c8a84b;
-      border-radius: 8px;
-      padding: 3px 12px;
-      font-weight: bold;
-      color: #c8a84b;
-      font-size: 1rem;
-    }
-
-    .breakdown-card {
-      background: #0d1f35;
-      border: 1px solid #1e3a5c;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 14px;
-    }
-
-    .breakdown-title {
-      font-weight: bold;
-      font-size: 1rem;
-      margin-bottom: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .final-score-badge {
-      font-size: 1rem;
-      font-weight: bold;
-      color: #c8a84b;
-      background: #0a1628;
-      padding: 4px 14px;
-      border-radius: 8px;
-      border: 1px solid #1e3a5c;
-    }
-
-    /* Legend */
-    .legend {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: #0a1628;
-      border: 1px solid #1e3a5c;
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 0.78rem;
-    }
-
-    .empty-state {
-      text-align: center;
-      color: #8baac8;
-      padding: 40px 20px;
-      font-size: 0.9rem;
-    }
-
-    .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
-
-    .result-form {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-
-    .result-form input {
-      width: 60px;
-      text-align: center;
-      font-size: 1.1rem;
-      font-weight: bold;
-    }
-
-    .match-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-
-    /* Loading spinner */
-    .spinner {
-      display: inline-block;
-      width: 16px; height: 16px;
-      border: 2px solid #1e3a5c;
-      border-top-color: #c8a84b;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Toast */
-    #toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 10px 28px;
-      border-radius: 20px;
-      font-weight: bold;
-      z-index: 9999;
-      font-size: 0.9rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      display: none;
-      white-space: nowrap;
-      color: #fff;
-    }
-
-    /* Admin-only sections */
-    .admin-only { display: none; }
-
-    /* My prediction highlight */
-    .my-pred-row { background: #0f2540; border-radius: 8px; padding: 10px 8px; }
-
-    /* Locked prediction */
-    .locked-input {
-      background: #111e30 !important;
-      color: #8baac8 !important;
-      cursor: not-allowed;
-      border-color: #1e3a5c !important;
-    }
-
-    @media (max-width: 500px) {
-      header h1 { font-size: 1.3rem; }
-      .score-inputs input { width: 46px; }
-      nav button { padding: 7px 12px; font-size: 0.78rem; }
-      .login-card { padding: 24px 16px; }
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
-
-<!-- ══════════ LOGIN SCREEN ══════════ -->
-<div id="loginScreen">
-  <div class="login-card">
-    <div class="logo">⚽</div>
-    <h2>World Cup Predictor</h2>
-    <p>Enter your name to join the game</p>
-    <input id="loginName" type="text" placeholder="Your name e.g. Alex"
-           maxlength="20"
-           onkeydown="if(event.key==='Enter') joinGame()"/>
-    <div style="margin-bottom:12px">
-      <input id="adminCode" type="password" placeholder="Admin code (optional)"
-             onkeydown="if(event.key==='Enter') joinGame()"/>
-    </div>
-    <button class="btn btn-gold" style="width:100%;font-size:1rem;padding:12px" onclick="joinGame()">
-      🚀 Join Game
-    </button>
-    <p style="margin-top:16px;font-size:0.72rem;color:#555">
-      Admin code is set in the app config.<br/>Leave blank to join as a regular player.
-    </p>
-  </div>
-</div>
-
-<!-- ══════════ MAIN APP ══════════ -->
-<div id="mainApp" style="display:none">
-
-  <header>
-    <h1>⚽ World Cup Predictor</h1>
-    <p id="headerSub">Predict · Compete · Win</p>
-  </header>
-
-  <div class="sync-bar">
-    <span class="sync-dot" id="syncDot"></span>
-    <span id="syncText">Connecting…</span>
-    <span style="margin-left:12px;color:#555">|</span>
-    <span id="currentUserLabel" style="margin-left:12px;color:#c8a84b;font-weight:bold"></span>
-    <button onclick="logout()" style="margin-left:12px;background:none;border:none;color:#8baac8;cursor:pointer;font-size:0.75rem">
-      🚪 Leave
-    </button>
-  </div>
-
-  <nav id="mainNav">
-    <button class="active" onclick="showPage('players', this)">👥 Players</button>
-    <button onclick="showPage('matches', this)">🏟️ Matches</button>
-    <button onclick="showPage('predict', this)">🎯 Predictions</button>
-    <button onclick="showPage('leaderboard', this)">🏆 Leaderboard</button>
-  </nav>
-
-  <!-- PLAYERS PAGE -->
-  <div id="page-players" class="page active">
-    <div class="card admin-only" id="addPlayerCard">
-      <h2>👥 Add Players <span class="admin-badge">Admin</span></h2>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Player Name</label>
-          <input id="playerName" type="text" placeholder="e.g. Alex"
-                 onkeydown="if(event.key==='Enter') addPlayer()"/>
+  <div class="topbar">
+    <div class="container">
+      <div class="between">
+        <div>
+          <h1>World Cup Prediction App</h1>
+          <div class="muted">All times shown in Singapore Time (GMT+8)</div>
         </div>
-        <button class="btn btn-gold" onclick="addPlayer()">+ Add Player</button>
+        <div class="row">
+          <input id="displayName" type="text" placeholder="Enter your name" />
+          <button id="saveNameBtn" class="success">Save Name</button>
+        </div>
       </div>
-    </div>
-    <div class="card">
-      <h2>Current Players</h2>
-      <div id="playersList">
-        <div class="empty-state"><div class="icon">👥</div>Loading…</div>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="matches">Matches</button>
+        <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
+        <button class="tab-btn" data-tab="bonus">Bonus Picks</button>
+        <button class="tab-btn" data-tab="admin">Admin</button>
+        <button class="tab-btn" data-tab="rules">Rules</button>
       </div>
     </div>
   </div>
 
-  <!-- MATCHES PAGE -->
-  <div id="page-matches" class="page">
-    <div class="card admin-only" id="addMatchCard">
-      <h2>🏟️ Add Match <span class="admin-badge">Admin</span></h2>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Home Team</label>
-          <input id="homeTeam" type="text" placeholder="e.g. Brazil"/>
-        </div>
-        <div class="form-group">
-          <label>Away Team</label>
-          <input id="awayTeam" type="text" placeholder="e.g. Argentina"/>
-        </div>
-        <div class="form-group" style="max-width:180px">
-          <label>Match Date & Time</label>
-          <input id="matchDate" type="datetime-local"/>
-        </div>
-        <button class="btn btn-gold" onclick="addMatch()">+ Add Match</button>
-      </div>
-    </div>
-    <div id="matchList">
-      <div class="empty-state"><div class="icon">🏟️</div>Loading…</div>
-    </div>
-  </div>
+  <div class="container">
+    <div id="messageBox" class="hidden notice"></div>
 
-  <!-- PREDICTIONS PAGE -->
-  <div id="page-predict" class="page">
-    <div class="card">
-      <h2>🎯 My Predictions</h2>
-      <div class="legend">
-        <div class="legend-item"><span class="pts-pill pts-3">3 pts</span> Exact score</div>
-        <div class="legend-item"><span class="pts-pill pts-2">2 pts</span> Right GD + winner</div>
-        <div class="legend-item"><span class="pts-pill pts-1">1 pt</span> Right winner only</div>
-        <div class="legend-item"><span class="pts-pill pts-0">0 pts</span> Wrong</div>
+    <section id="tab-matches" class="tab-panel">
+      <div class="card">
+        <div class="between">
+          <h2 class="section-title">Match Predictions</h2>
+          <div class="small">Predictions lock when the match kicks off</div>
+        </div>
+        <div id="matchesList"></div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Select Match</label>
-          <select id="predictMatchSel" onchange="renderPredictForm()">
-            <option value="">-- Select a match --</option>
-          </select>
+    </section>
+
+    <section id="tab-leaderboard" class="tab-panel hidden">
+      <div class="card">
+        <h2 class="section-title">Leaderboard</h2>
+        <div id="leaderboardWrap"></div>
+      </div>
+    </section>
+
+    <section id="tab-bonus" class="tab-panel hidden">
+      <div class="grid grid-2">
+        <div class="card">
+          <h2 class="section-title">Group Stage Winners</h2>
+          <div class="muted">5 pts per correct group winner</div>
+          <div id="groupWinnersForm"></div>
+        </div>
+        <div class="card">
+          <h2 class="section-title">Overall Winner</h2>
+          <div class="muted">20 pts for correct overall winner</div>
+          <div id="overallWinnerForm"></div>
         </div>
       </div>
-    </div>
-    <div id="predictForm"></div>
+    </section>
+
+    <section id="tab-admin" class="tab-panel hidden">
+      <div class="grid grid-2">
+        <div class="card">
+          <h2 class="section-title">Add Match</h2>
+          <div class="grid">
+            <input id="homeTeam" placeholder="Home team" />
+            <input id="awayTeam" placeholder="Away team" />
+            <input id="kickoffTime" type="datetime-local" />
+            <select id="stage">
+              <option value="group">Group</option>
+              <option value="knockout">Knockout</option>
+            </select>
+            <input id="groupName" placeholder="Group name (e.g. Group A)" />
+            <button id="addMatchBtn" class="success">Add Match</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="section-title">Set Result</h2>
+          <div class="grid">
+            <select id="resultMatchSelect"></select>
+            <div class="row">
+              <input id="resultHomeScore" type="number" min="0" placeholder="Home" />
+              <span>-</span>
+              <input id="resultAwayScore" type="number" min="0" placeholder="Away" />
+            </div>
+            <button id="saveResultBtn">Save Result & Recalculate</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="section-title">Set Actual Group Winners</h2>
+          <div id="adminGroupWinners"></div>
+        </div>
+
+        <div class="card">
+          <h2 class="section-title">Set Actual Overall Winner</h2>
+          <div id="adminOverallWinner"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-rules" class="tab-panel hidden">
+      <div class="card rules">
+        <h2 class="section-title">Rules</h2>
+        <ul>
+          <li>Correct score = 3 pts</li>
+          <li>Correct goal difference = 2 pts</li>
+          <li>Correct winner / draw = 1 pt</li>
+          <li>Correct group stage winner = 5 pts per group</li>
+          <li>Correct overall winner = 20 pts</li>
+          <li>Points are cumulative in the sense that max per match is 3 pts</li>
+          <li>For knockout games, only score / goal diff / winner apply</li>
+          <li>Predictions lock at kickoff time</li>
+          <li>All times shown in Singapore Time (GMT+8)</li>
+        </ul>
+      </div>
+    </section>
   </div>
 
-  <!-- LEADERBOARD PAGE -->
-  <div id="page-leaderboard" class="page">
-    <div id="leaderboardContent"></div>
-    <div id="matchBreakdown"></div>
-  </div>
+  <script type="module">
+    /*
+      ============================================================
+      FIREBASE
+      ============================================================
+      You said Firebase is already integrated.
+      If your Firebase init already exists elsewhere, keep that and
+      remove/adjust this section.
 
-</div><!-- end mainApp -->
+      Required Firestore collections:
+      - matches
+      - predictions
+      - users
+      - settings/app
+      - bonusPredictions
+    */
 
-<div id="toast"></div>
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      getDoc,
+      setDoc,
+      updateDoc,
+      doc,
+      query,
+      orderBy,
+      serverTimestamp,
+      where
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<!-- Firebase SDKs -->
-<script type="module">
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// ╔══════════════════════════════════════════╗
-// ║   🔧 PASTE YOUR FIREBASE CONFIG BELOW   ║
-// ╚══════════════════════════════════════════╝
-const firebaseConfig = {
-  apiKey: "AIzaSyBO3YHKEkvodyB3YUE35JescB3e10ja0uA",
-  authDomain: "worldcup-predictor-6fdb8.firebaseapp.com",
-  projectId: "worldcup-predictor-6fdb8",
-  storageBucket: "worldcup-predictor-6fdb8.firebasestorage.app",
-  messagingSenderId: "255220213792",
-  appId: "1:255220213792:web:4d628451b116a95d703445",
-  measurementId: "G-6MGEQGYESZ"
-};
+    // Replace with your config only if not already initialized elsewhere
+    const firebaseConfig = {
+    apiKey: "AIzaSyBO3YHKEkvodyB3YUE35JescB3e10ja0uA",
+    authDomain: "worldcup-predictor-6fdb8.firebaseapp.com",
+    projectId: "worldcup-predictor-6fdb8",
+    storageBucket: "worldcup-predictor-6fdb8.firebasestorage.app",
+    messagingSenderId: "255220213792",
+    appId: "1:255220213792:web:4d628451b116a95d703445",
+    measurementId: "G-6MGEQGYESZ"
+    };
 
-//===========INITIALISE FIREBASE=================
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-const analytics = getAnalytics(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-// PASSCODE
-const ADMIN_CODE = "worldcup"; // ← Change this!
+    /*
+      ============================================================
+      APP STATE
+      ============================================================
+    */
+    let currentUser = null;
+    let matches = [];
+    let predictions = [];
+    let users = [];
+    let bonusPredictions = [];
+    let appSettings = {
+      actualGroupWinners: {},
+      actualOverallWinner: ""
+    };
 
-// ── Collections ────────────────────────────
-const playersCol     = collection(db, 'players');
-const matchesCol     = collection(db, 'matches');
-const predictionsCol = collection(db, 'predictions');
+    const DEFAULT_GROUPS = ["Group A", "Group B", "Group C", "Group D", "Group E", "Group F", "Group G", "Group H"];
 
-// ── Local cache ────────────────────────────
-let players     = [];
-let matches     = [];
-let predictions = {}; // { matchId: { playerName: {h,a} } }
-let currentUser = null;
-let isAdmin     = false;
+    /*
+      ============================================================
+      HELPERS
+      ============================================================
+    */
+    function showMessage(text, type = "info") {
+      const box = document.getElementById("messageBox");
+      box.textContent = text;
+      box.className = "notice";
+      if (type === "success") box.classList.add("success-msg");
+      if (type === "error") box.classList.add("danger-msg");
+      box.classList.remove("hidden");
+      setTimeout(() => box.classList.add("hidden"), 3000);
+    }
 
-// ══════════════════════════════════════════
-//  LOGIN
-// ══════════════════════════════════════════
-window.joinGame = function() {
-  const name = document.getElementById('loginName').value.trim();
-  const code = document.getElementById('adminCode').value.trim();
+    function getCurrentUserName() {
+      return localStorage.getItem("predictor_name") || "";
+    }
 
-  if (!name) return toast('⚠️ Enter your name.', '#e67e22');
-  if (name.length < 2) return toast('⚠️ Name too short.', '#e67e22');
+    async function ensureUser() {
+      const name = getCurrentUserName();
+      if (!name) return null;
 
-  currentUser = name;
-  isAdmin     = (code === ADMIN_CODE);
+      const userId = slugify(name);
+      currentUser = { id: userId, name };
 
-  // Show admin sections
-  if (isAdmin) {
-    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
-  }
+      await setDoc(doc(db, "users", userId), {
+        id: userId,
+        name,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
 
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('mainApp').style.display     = 'block';
-  document.getElementById('currentUserLabel').innerHTML =
-    `🧑 \${esc(name)}\${isAdmin ? '<span class="admin-badge">Admin</span>' : ''}`;
+      return currentUser;
+    }
 
-  startListeners();
-  toast(`👋 Welcome, \${name}!`);
-};
+    function slugify(str) {
+      return str.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    }
 
-window.logout = function() {
-  if (!confirm('Leave the game?')) return;
-  currentUser = null;
-  isAdmin     = false;
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('mainApp').style.display     = 'none';
-  document.getElementById('loginName').value  = '';
-  document.getElementById('adminCode').value  = '';
-};
+    function formatSingaporeTime(dateStr) {
+      const d = new Date(dateStr);
+      return new Intl.DateTimeFormat("en-SG", {
+        timeZone: "Asia/Singapore",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(d);
+    }
 
-// ══════════════════════════════════════════
-//  REAL-TIME LISTENERS
-// ══════════════════════════════════════════
-function startListeners() {
-  // Players
-  onSnapshot(playersCol, snap => {
-    players = snap.docs.map(d => d.data().name).sort();
-    renderPlayers();
-    renderPredictPage();
-  }, () => setOffline());
+    function isLocked(kickoffTime) {
+      return new Date() >= new Date(kickoffTime);
+    }
 
-  // Matches
-  onSnapshot(matchesCol, snap => {
-    matches = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-    renderMatchList();
-    renderPredictPage();
-    setOnline();
-  }, () => setOffline());
+    function getMatchOutcome(home, away) {
+      if (home > away) return "home";
+      if (away > home) return "away";
+      return "draw";
+    }
 
-  // Predictions
-  onSnapshot(predictionsCol, snap => {
-    predictions = {};
-    snap.docs.forEach(d => {
-      const data = d.data();
-      if (!predictions[data.matchId]) predictions[data.matchId] = {};
-      predictions[data.matchId][data.player] = { h: data.h, a: data.a };
+    function calculateMatchPoints(predHome, predAway, actualHome, actualAway) {
+      if (
+        predHome === actualHome &&
+        predAway === actualAway
+      ) return 3;
+
+      const predDiff = predHome - predAway;
+      const actualDiff = actualHome - actualAway;
+      const predOutcome = getMatchOutcome(predHome, predAway);
+      const actualOutcome = getMatchOutcome(actualHome, actualAway);
+
+      if (predDiff === actualDiff) return 2;
+      if (predOutcome === actualOutcome) return 1;
+      return 0;
+    }
+
+    function getPredictionForMatch(matchId, userId) {
+      return predictions.find(p => p.matchId === matchId && p.userId === userId);
+    }
+
+    function getBonusPrediction(userId) {
+      return bonusPredictions.find(p => p.userId === userId) || {
+        userId,
+        groupWinners: {},
+        overallWinner: ""
+      };
+    }
+
+    async function savePrediction(matchId, homeScore, awayScore) {
+      if (!currentUser) {
+        showMessage("Please save your name first.", "error");
+        return;
+      }
+
+      const match = matches.find(m => m.id === matchId);
+      if (!match) return;
+
+      if (isLocked(match.kickoffTime)) {
+        showMessage("Prediction is locked for this match.", "error");
+        return;
+      }
+
+      const predictionId = `\${currentUser.id}_\${matchId}`;
+      await setDoc(doc(db, "predictions", predictionId), {
+        id: predictionId,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        matchId,
+        predHomeScore: Number(homeScore),
+        predAwayScore: Number(awayScore),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      showMessage("Prediction saved.", "success");
+      await loadAllData();
+      renderAll();
+    }
+
+    async function saveBonusPrediction(groupWinners, overallWinner) {
+      if (!currentUser) {
+        showMessage("Please save your name first.", "error");
+        return;
+      }
+
+      await setDoc(doc(db, "bonusPredictions", currentUser.id), {
+        userId: currentUser.id,
+        userName: currentUser.name,
+        groupWinners,
+        overallWinner,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      showMessage("Bonus picks saved.", "success");
+      await loadAllData();
+      renderAll();
+    }
+
+    async function addMatch() {
+      const homeTeam = document.getElementById("homeTeam").value.trim();
+      const awayTeam = document.getElementById("awayTeam").value.trim();
+      const kickoffTime = document.getElementById("kickoffTime").value;
+      const stage = document.getElementById("stage").value;
+      const groupName = document.getElementById("groupName").value.trim();
+
+      if (!homeTeam || !awayTeam || !kickoffTime) {
+        showMessage("Please fill in all required match fields.", "error");
+        return;
+      }
+
+      await addDoc(collection(db, "matches"), {
+        homeTeam,
+        awayTeam,
+        kickoffTime: new Date(kickoffTime).toISOString(),
+        stage,
+        groupName: stage === "group" ? groupName : "",
+        resultHomeScore: null,
+        resultAwayScore: null,
+        completed: false,
+        createdAt: serverTimestamp()
+      });
+
+      showMessage("Match added.", "success");
+
+      document.getElementById("homeTeam").value = "";
+      document.getElementById("awayTeam").value = "";
+      document.getElementById("kickoffTime").value = "";
+      document.getElementById("groupName").value = "";
+
+      await loadAllData();
+      renderAll();
+    }
+
+    async function saveResult() {
+      const matchId = document.getElementById("resultMatchSelect").value;
+      const home = document.getElementById("resultHomeScore").value;
+      const away = document.getElementById("resultAwayScore").value;
+
+      if (!matchId || home === "" || away === "") {
+        showMessage("Please select a match and enter both scores.", "error");
+        return;
+      }
+
+      await updateDoc(doc(db, "matches", matchId), {
+        resultHomeScore: Number(home),
+        resultAwayScore: Number(away),
+        completed: true,
+        updatedAt: serverTimestamp()
+      });
+
+      await recalculateAllScores();
+      showMessage("Result saved and leaderboard recalculated.", "success");
+      await loadAllData();
+      renderAll();
+    }
+
+    async function saveActualGroupWinners() {
+      const actualGroupWinners = {};
+      DEFAULT_GROUPS.forEach(group => {
+        const val = document.getElementById(`actual-\${slugify(group)}`)?.value?.trim() || "";
+        actualGroupWinners[group] = val;
+      });
+
+      await setDoc(doc(db, "settings", "app"), {
+        actualGroupWinners,
+        actualOverallWinner: appSettings.actualOverallWinner || "",
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      await recalculateAllScores();
+      showMessage("Actual group winners saved.", "success");
+      await loadAllData();
+      renderAll();
+    }
+
+    async function saveActualOverallWinner() {
+      const winner = document.getElementById("actualOverallWinnerInput").value.trim();
+
+      await setDoc(doc(db, "settings", "app"), {
+        actualGroupWinners: appSettings.actualGroupWinners || {},
+        actualOverallWinner: winner,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      await recalculateAllScores();
+      showMessage("Actual overall winner saved.", "success");
+      await loadAllData();
+      renderAll();
+    }
+
+    async function recalculateAllScores() {
+      const userTotals = {};
+
+      users.forEach(u => {
+        userTotals[u.id] = {
+          userId: u.id,
+          userName: u.name,
+          matchPoints: 0,
+          bonusPoints: 0,
+          totalPoints: 0
+        };
+      });
+
+      for (const p of predictions) {
+        const match = matches.find(m => m.id === p.matchId);
+        if (!match || !match.completed) continue;
+
+        const points = calculateMatchPoints(
+          Number(p.predHomeScore),
+          Number(p.predAwayScore),
+          Number(match.resultHomeScore),
+          Number(match.resultAwayScore)
+        );
+
+        if (!userTotals[p.userId]) {
+          userTotals[p.userId] = {
+            userId: p.userId,
+            userName: p.userName || p.userId,
+            matchPoints: 0,
+            bonusPoints: 0,
+            totalPoints: 0
+          };
+        }
+
+        userTotals[p.userId].matchPoints += points;
+
+        await setDoc(doc(db, "predictions", p.id), {
+          pointsAwarded: points
+        }, { merge: true });
+      }
+
+      for (const bp of bonusPredictions) {
+        if (!userTotals[bp.userId]) {
+          userTotals[bp.userId] = {
+            userId: bp.userId,
+            userName: bp.userName || bp.userId,
+            matchPoints: 0,
+            bonusPoints: 0,
+            totalPoints: 0
+          };
+        }
+
+        let bonus = 0;
+
+        const actualGroups = appSettings.actualGroupWinners || {};
+        const predictedGroups = bp.groupWinners || {};
+
+        for (const group of DEFAULT_GROUPS) {
+          if (
+            actualGroups[group] &&
+            predictedGroups[group] &&
+            actualGroups[group].trim().toLowerCase() === predictedGroups[group].trim().toLowerCase()
+          ) {
+            bonus += 5;
+          }
+        }
+
+        if (
+          appSettings.actualOverallWinner &&
+          bp.overallWinner &&
+          appSettings.actualOverallWinner.trim().toLowerCase() === bp.overallWinner.trim().toLowerCase()
+        ) {
+          bonus += 20;
+        }
+
+        userTotals[bp.userId].bonusPoints = bonus;
+      }
+
+      for (const uid of Object.keys(userTotals)) {
+        userTotals[uid].totalPoints = userTotals[uid].matchPoints + userTotals[uid].bonusPoints;
+        await setDoc(doc(db, "users", uid), {
+          leaderboard: userTotals[uid],
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+    }
+
+    async function loadAllData() {
+      await ensureUser();
+
+      const matchesSnap = await getDocs(query(collection(db, "matches"), orderBy("kickoffTime")));
+      matches = matchesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const predictionsSnap = await getDocs(collection(db, "predictions"));
+      predictions = predictionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const usersSnap = await getDocs(collection(db, "users"));
+      users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const bonusSnap = await getDocs(collection(db, "bonusPredictions"));
+      bonusPredictions = bonusSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const settingsRef = doc(db, "settings", "app");
+      const settingsSnap = await getDoc(settingsRef);
+      if (settingsSnap.exists()) {
+        appSettings = {
+          actualGroupWinners: settingsSnap.data().actualGroupWinners || {},
+          actualOverallWinner: settingsSnap.data().actualOverallWinner || ""
+        };
+      } else {
+        appSettings = {
+          actualGroupWinners: {},
+          actualOverallWinner: ""
+        };
+      }
+    }
+
+    /*
+      ============================================================
+      RENDER
+      ============================================================
+    */
+    function renderMatches() {
+      const wrap = document.getElementById("matchesList");
+      wrap.innerHTML = "";
+
+      if (!matches.length) {
+        wrap.innerHTML = `<div class="muted">No matches added yet.</div>`;
+        return;
+      }
+
+      matches.forEach(match => {
+        const locked = isLocked(match.kickoffTime);
+        const pred = currentUser ? getPredictionForMatch(match.id, currentUser.id) : null;
+
+        const div = document.createElement("div");
+        div.className = "match";
+
+        let statusPill = `<span class="pill \${locked ? "locked" : "open"}">\${locked ? "Locked" : "Open"}</span>`;
+        if (match.completed) statusPill = `<span class="pill done">Result Added</span>`;
+
+        div.innerHTML = `
+          <div class="between">
+            <div>
+              <div class="teams">\${match.homeTeam} vs \${match.awayTeam}</div>
+              <div class="small">
+                \${formatSingaporeTime(match.kickoffTime)}
+                • \${match.stage.toUpperCase()}
+                \${match.groupName ? `• \${match.groupName}` : ""}
+              </div>
+            </div>
+            <div>\${statusPill}</div>
+          </div>
+
+          <div class="score-box">
+            <input type="number" min="0" id="home-\${match.id}" value="\${pred?.predHomeScore ?? ""}" \${locked ? "disabled" : ""} />
+            <span>-</span>
+            <input type="number" min="0" id="away-\${match.id}" value="\${pred?.predAwayScore ?? ""}" \${locked ? "disabled" : ""} />
+            <button \${locked ? "disabled" : ""} data-save-match="\${match.id}">Save Prediction</button>
+          </div>
+
+          \${
+            match.completed
+              ? `<div class="notice" style="margin-top:10px;">
+                  Final result: <strong>\${match.resultHomeScore} - \${match.resultAwayScore}</strong>
+                  \${pred ? `• Your points: <strong>\${pred.pointsAwarded ?? 0}</strong>` : ""}
+                 </div>`
+              : ""
+          }
+        `;
+
+        wrap.appendChild(div);
+      });
+
+      document.querySelectorAll("[data-save-match]").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          const matchId = e.target.getAttribute("data-save-match");
+          const home = document.getElementById(`home-\${matchId}`).value;
+          const away = document.getElementById(`away-\${matchId}`).value;
+
+          if (home === "" || away === "") {
+            showMessage("Please enter both scores.", "error");
+            return;
+          }
+
+          await savePrediction(matchId, home, away);
+        });
+      });
+    }
+
+    function renderLeaderboard() {
+      const wrap = document.getElementById("leaderboardWrap");
+
+      const rows = users
+        .map(u => ({
+          userId: u.id,
+          userName: u.name,
+          matchPoints: u.leaderboard?.matchPoints || 0,
+          bonusPoints: u.leaderboard?.bonusPoints || 0,
+          totalPoints: u.leaderboard?.totalPoints || 0
+        }))
+        .sort((a, b) => b.totalPoints - a.totalPoints || b.matchPoints - a.matchPoints || a.userName.localeCompare(b.userName));
+
+      if (!rows.length) {
+        wrap.innerHTML = `<div class="muted">No users yet.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Match Points</th>
+              <th>Bonus Points</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            \${rows.map((r, i) => `
+              <tr>
+                <td class="\${i === 0 ? "leader-1" : ""}">\${i + 1}</td>
+                <td class="\${i === 0 ? "leader-1" : ""}">\${r.userName}</td>
+                <td>\${r.matchPoints}</td>
+                <td>\${r.bonusPoints}</td>
+                <td><strong>\${r.totalPoints}</strong></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderBonusForms() {
+      const groupWrap = document.getElementById("groupWinnersForm");
+      const overallWrap = document.getElementById("overallWinnerForm");
+      const currentBonus = currentUser ? getBonusPrediction(currentUser.id) : { groupWinners: {}, overallWinner: "" };
+
+      groupWrap.innerHTML = `
+        <div class="grid">
+          \${DEFAULT_GROUPS.map(group => `
+            <div class="row">
+              <label style="min-width:90px;">\${group}</label>
+              <input id="group-pick-\${slugify(group)}" value="\${currentBonus.groupWinners?.[group] || ""}" placeholder="Team name" />
+            </div>
+          `).join("")}
+          <button id="saveGroupWinnersBtn" class="success">Save Group Winner Picks</button>
+        </div>
+      `;
+
+      overallWrap.innerHTML = `
+        <div class="grid">
+          <input id="overallWinnerPick" value="\${currentBonus.overallWinner || ""}" placeholder="Pick the overall winner" />
+          <button id="saveOverallWinnerBtn" class="success">Save Overall Winner</button>
+        </div>
+      `;
+
+      document.getElementById("saveGroupWinnersBtn").addEventListener("click", async () => {
+        const existing = getBonusPrediction(currentUser.id);
+        const groupWinners = {};
+        DEFAULT_GROUPS.forEach(group => {
+          groupWinners[group] = document.getElementById(`group-pick-\${slugify(group)}`).value.trim();
+        });
+        await saveBonusPrediction(groupWinners, existing.overallWinner || "");
+      });
+
+      document.getElementById("saveOverallWinnerBtn").addEventListener("click", async () => {
+        const existing = getBonusPrediction(currentUser.id);
+        const overallWinner = document.getElementById("overallWinnerPick").value.trim();
+        await saveBonusPrediction(existing.groupWinners || {}, overallWinner);
+      });
+    }
+
+    function renderAdmin() {
+      const select = document.getElementById("resultMatchSelect");
+      select.innerHTML = matches.map(m => `
+        <option value="\${m.id}">
+          \${m.homeTeam} vs \${m.awayTeam} - \${formatSingaporeTime(m.kickoffTime)}
+        </option>
+      `).join("");
+
+      const adminGroup = document.getElementById("adminGroupWinners");
+      adminGroup.innerHTML = `
+        <div class="grid">
+          \${DEFAULT_GROUPS.map(group => `
+            <div class="row">
+              <label style="min-width:90px;">\${group}</label>
+              <input id="actual-\${slugify(group)}" value="\${appSettings.actualGroupWinners?.[group] || ""}" placeholder="Actual winner" />
+            </div>
+          `).join("")}
+          <button id="saveActualGroupWinnersBtn" class="success">Save Actual Group Winners</button>
+        </div>
+      `;
+
+      const adminOverall = document.getElementById("adminOverallWinner");
+      adminOverall.innerHTML = `
+        <div class="grid">
+          <input id="actualOverallWinnerInput" value="\${appSettings.actualOverallWinner || ""}" placeholder="Actual overall winner" />
+          <button id="saveActualOverallWinnerBtn" class="success">Save Actual Overall Winner</button>
+        </div>
+      `;
+
+      document.getElementById("saveActualGroupWinnersBtn").addEventListener("click", saveActualGroupWinners);
+      document.getElementById("saveActualOverallWinnerBtn").addEventListener("click", saveActualOverallWinner);
+    }
+
+    function renderAll() {
+      document.getElementById("displayName").value = getCurrentUserName();
+      renderMatches();
+      renderLeaderboard();
+      renderBonusForms();
+      renderAdmin();
+    }
+
+    /*
+      ============================================================
+      EVENTS
+      ============================================================
+    */
+    document.getElementById("saveNameBtn").addEventListener("click", async () => {
+      const name = document.getElementById("displayName").value.trim();
+      if (!name) {
+        showMessage("Please enter your name.", "error");
+        return;
+      }
+      localStorage.setItem("predictor_name", name);
+      await ensureUser();
+      await loadAllData();
+      renderAll();
+      showMessage("Name saved.", "success");
     });
-    renderPredictForm();
-    const activePage = document.querySelector('.page.active');
-    if (activePage && activePage.id === 'page-leaderboard') renderLeaderboard();
-  });
-}
 
-function setOnline()  {
-  document.getElementById('syncDot').classList.remove('offline');
-  document.getElementById('syncText').textContent = 'Live — synced';
-}
+    document.getElementById("addMatchBtn").addEventListener("click", addMatch);
+    document.getElementById("saveResultBtn").addEventListener("click", saveResult);
 
-function setOffline() {
-  document.getElementById('syncDot').classList.add('offline');
-  document.getElementById('syncText').textContent = 'Offline';
-}
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
 
-// ══════════════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════════════
-window.showPage = function(name, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  if (btn) btn.classList.add('active');
-  if (name === 'leaderboard') renderLeaderboard();
-  if (name === 'predict')     renderPredictPage();
-};
+        const tab = btn.getAttribute("data-tab");
+        document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.add("hidden"));
+        document.getElementById(`tab-\${tab}`).classList.remove("hidden");
+      });
+    });
 
-// ══════════════════════════════════════════
-//  PLAYERS
-// ══════════════════════════════════════════
-window.addPlayer = async function() {
-  if (!isAdmin) return toast('⛔ Admins only.', '#e74c3c');
-  const inp  = document.getElementById('playerName');
-  const name = inp.value.trim();
-  if (!name) return toast('⚠️ Enter a name.', '#e67e22');
-  if (players.includes(name)) return toast('⚠️ Player already exists.', '#e67e22');
+    /*
+      ============================================================
+      INIT
+      ============================================================
+    */
+    async function init() {
+      await loadAllData();
+      renderAll();
+    }
 
-  try {
-    // Use player name as doc id sanitized for safety
-    const docId = name.toLowerCase().replace(/\s+/g, '-');
-
-    await setDoc(doc(playersCol, docId), { name }); // Add to Firestore
-    inp.value = '';
-    toast(`✅ Player "\${name}" added!`);
-  } catch (err) {
-    toast('❌ Failed to add player. Try again.', '#e74c3c');
-    console.error(err);
-  }
-};
+    init();
+  </script>
+</body>
+</html>

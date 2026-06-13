@@ -81,7 +81,7 @@
     .user-badge:hover { border-color: var(--gold); }
     .user-badge .dot { width:8px; height:8px; border-radius:50%; background:var(--green); }
     .user-badge .dot.admin { background: var(--gold); }
-
+  
     .btn-logout {
         display: flex; align-items: center; gap: 6px;
         background: transparent; border: 1px solid var(--border);
@@ -90,6 +90,16 @@
         cursor: pointer; transition: .2s;
     }
     .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+    button,
+    .user-select-btn,
+    .tab,
+    .btn-logout,
+    .user-badge {
+        -webkit-appearance: none;
+        appearance: none;
+        touch-action: manipulation;
+    }  
 
     /* ── TABS ── */
     .tabs {
@@ -275,7 +285,6 @@
     .login-box .logo { font-size: 36px; margin-bottom: 4px; }
     .login-box p { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
 
-    /* User grid — no avatars, just name buttons */
     .user-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
     .user-select-btn {
         background: var(--surface); border: 1px solid var(--border);
@@ -532,9 +541,23 @@
                         "Group G","Group H","Group I","Group J","Group K","Group L"];
 
     function load(key, def) {
-    try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : def;
+    } catch (e) {
+        console.warn("load failed", key, e);
+        return def;
     }
-    function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+    }
+
+    function save(key, val) {
+    try {
+        localStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {
+        console.warn("save failed", key, e);
+    }
+    }
+
 
     function initUsers() {
     let users = load("wc_users", null);

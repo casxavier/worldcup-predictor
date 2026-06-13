@@ -1288,10 +1288,15 @@ document.querySelectorAll(".tab").forEach(btn => {
     }
 
     if (!_session) {
-      document.getElementById("loginOverlay").classList.remove("hidden");
+        // Fetch users once so the login grid has names to show
+        const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+        const snap = await getDocs(collection(db, "users"));
+        snap.forEach(d => { _users[d.id] = { id: d.id, ...d.data() }; });
+        document.getElementById("loginOverlay").classList.remove("hidden");
+        buildLoginGrid();
     } else {
-      document.getElementById("loginOverlay").classList.add("hidden");
-      renderAll();
+        document.getElementById("loginOverlay").classList.add("hidden");
+        renderAll();
     }
   } catch (err) {
     console.error("Firebase init error:", err);

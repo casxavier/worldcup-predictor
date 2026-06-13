@@ -542,7 +542,7 @@
         users = {};
         for (let i = 1; i <= 8; i++) {
         const id = `user${i}`;
-            users[id] = { id, displayName: `Player \${i}`, emoji: USER_EMOJIS[i-1], manualPts: 0 };
+            users[id] = { id, displayName: `Player ${i}`, emoji: USER_EMOJIS[i-1], manualPts: 0 };
         }
         save("wc_users", users);
     }

@@ -259,6 +259,13 @@
 
     /* ── LEADERBOARD ── */
     table { width: 100%; border-collapse: collapse; }
+    .table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 10px;
+    }
+
     th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
     th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; background: var(--surface); }
     .rank-1 { color: var(--gold); font-weight: 700; }
@@ -285,14 +292,29 @@
     .login-box .logo { font-size: 36px; margin-bottom: 4px; }
     .login-box p { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
 
-    .user-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
-    .user-select-btn {
-        background: var(--surface); border: 1px solid var(--border);
-        border-radius: 10px; padding: 12px 6px;
-        color: var(--text); font-weight: 600; font-size: 13px;
-        cursor: pointer; transition: .15s;
-        display: flex; align-items: center; justify-content: center;
+    .user-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 8px;
+        margin-bottom: 20px;
     }
+    .user-select-btn {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 8px;
+        color: var(--text);
+        font-weight: 600;
+        font-size: clamp(12px, 3vw, 13px);
+        cursor: pointer;
+        transition: .15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        text-align: center;
+    }
+
     .user-select-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(240,192,64,.06); }
 
     .divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--muted); font-size: 12px; }
@@ -835,6 +857,7 @@
     const medal  = i => i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
 
     wrap.innerHTML = `
+        <div class = "table-wrap">
         <table>
             <thead><tr>
                 <th>#</th><th>Player</th><th>Match Pts</th><th>Bonus Pts</th><th>Carried Over Points</th><th>Total</th>
@@ -850,7 +873,8 @@
                 <td><strong style="color:var(--gold);">${u.totalPts||0}</strong></td>
             </tr>`).join("")}
         </tbody>
-        </table>`;
+        </table>
+        </div>`;
     }
 
     // ── BONUS ──

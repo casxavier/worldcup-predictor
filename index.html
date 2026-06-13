@@ -120,7 +120,6 @@ button {
 button:hover { opacity: .92; transform: translateY(-1px); filter: brightness(1.05); }
 button:disabled { opacity: .4; cursor: not-allowed; transform: none; filter: none; }
 
-/* Match cards */
 .match-item {
   background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)), var(--surface);
   border: 1px solid var(--border); border-radius: var(--r);
@@ -149,7 +148,6 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none; filter: non
   border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
 }
 
-/* Leaderboard */
 .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
 table { width: 100%; border-collapse: collapse; min-width: 500px; }
 th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
@@ -158,7 +156,6 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
 .rank-2 { color: #c0c8d8; font-weight: 600; }
 .rank-3 { color: #cd7c3a; font-weight: 600; }
 
-/* Login overlay */
 .overlay { position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,.96); display: flex; align-items: center; justify-content: center; padding: 20px; }
 .login-box {
   background: linear-gradient(180deg, #1a1a1a, #111);
@@ -181,15 +178,11 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
 .divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--muted); font-size: 12px; }
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-/* Profile modal */
-.modal-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
 .modal-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 420px; }
 .modal-box h3 { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--gold); margin-bottom: 16px; }
-
-/* Edit match modal */
 .edit-modal-inner { display: flex; flex-direction: column; gap: 12px; }
 
-/* Toast */
 .toast {
   position: fixed; bottom: 24px; right: 24px; z-index: 9999;
   background: var(--card); border: 1px solid var(--border);
@@ -202,26 +195,40 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
 .toast.error   { border-color: var(--red); color: #ff9b9b; }
 .toast.info    { border-color: var(--blue); color: #9fb0ff; }
 
-/* Bonus */
-.bonus-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.bonus-label { min-width: 80px; color: var(--text); font-size: 13px; font-weight: 600; }
+/* Bonus group cards */
+.bonus-group-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; margin-bottom: 10px;
+}
+.bonus-group-header {
+  font-size: 12px; font-weight: 700; color: var(--gold);
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+}
+.bonus-group-teams { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
 
-/* Connection */
 .conn-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 .dot-live { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .dot-live.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
 
-/* Show all past toggle */
 .show-past-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
 .past-count { font-size: 12px; color: var(--muted); }
 
-/* Admin match list item */
 .admin-match-row {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 10px 12px; background: var(--surface);
   border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;
 }
 .admin-match-row:hover { border-color: #3b4e70; }
+
+/* Confirm dialog */
+.confirm-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.confirm-box {
+  background: var(--card); border: 1px solid var(--red);
+  border-radius: 16px; padding: 28px; width: 100%; max-width: 380px; text-align: center;
+}
+.confirm-box h3 { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--red); margin-bottom: 10px; }
+.confirm-box p { color: var(--muted); font-size: 13px; margin-bottom: 20px; line-height: 1.6; }
+.confirm-actions { display: flex; gap: 10px; }
 
 .hidden { display: none !important; }
 </style>
@@ -299,8 +306,20 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
       </div>
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
         <button class="btn-warn" style="width:100%;font-size:12px;" id="deleteMatchBtn">🗑 Delete This Match</button>
-        <div class="hint" style="margin-top:6px;text-align:center;">This also removes all predictions for this match.</div>
+        <div class="hint" style="margin-top:6px;text-align:center;">Removes the match and all predictions for it.</div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE DIALOG -->
+<div class="confirm-overlay hidden" id="confirmDeleteOverlay">
+  <div class="confirm-box">
+    <h3>Delete Match?</h3>
+    <p id="confirmDeleteMsg">This will permanently delete the match and remove all player predictions for it. This cannot be undone.</p>
+    <div class="confirm-actions">
+      <button class="btn-ghost" style="flex:1;" id="confirmCancelBtn">Cancel</button>
+      <button class="btn-red" style="flex:1;" id="confirmDeleteBtn">Yes, Delete</button>
     </div>
   </div>
 </div>
@@ -342,7 +361,7 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
         <h2 style="margin-bottom:0;">Match Predictions</h2>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span class="past-count" id="hiddenPastCount"></span>
-          <button class="btn-ghost" id="togglePastBtn" style="font-size:12px;padding:6px 14px;">Show Past Matches</button>
+          <button class="btn-ghost hidden" id="togglePastBtn" style="font-size:12px;padding:6px 14px;">Show Past Matches</button>
         </div>
       </div>
       <div id="matchesList"><div style="color:var(--muted);padding:20px 0;">Loading…</div></div>
@@ -359,25 +378,16 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
 
   <!-- BONUS -->
   <section id="tab-bonus" class="tab-panel hidden">
-    <div class="grid2">
-      <div class="card">
-        <h2>Group Stage Winners</h2>
-        <div class="hint" style="margin-bottom:14px;">+5 pts per correct group winner</div>
-        <div id="groupWinnersForm"></div>
-      </div>
-      <div class="card">
-        <h2>Overall Winner</h2>
-        <div class="hint" style="margin-bottom:14px;">+20 pts for correct World Cup winner</div>
-        <div id="overallWinnerForm"></div>
-      </div>
+    <div class="card">
+      <h2>Bonus Picks</h2>
+      <div class="hint" style="margin-bottom:18px;">Pick the winner of each group (+5 pts each) and the overall World Cup winner (+20 pts).</div>
+      <div id="bonusForm"><div class="hint">Log in as a player to submit bonus picks.</div></div>
     </div>
   </section>
 
   <!-- ADMIN -->
   <section id="tab-admin" class="tab-panel hidden">
     <div class="grid2">
-
-      <!-- Add match -->
       <div class="card">
         <h2>Add Match</h2>
         <div style="display:flex;flex-direction:column;gap:12px;">
@@ -404,7 +414,6 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
         </div>
       </div>
 
-      <!-- Set/edit score -->
       <div class="card">
         <h2>Set / Edit Score</h2>
         <div style="display:flex;flex-direction:column;gap:12px;">
@@ -425,13 +434,11 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
         </div>
       </div>
 
-      <!-- Manage users -->
       <div class="card">
         <h2>Manage Users</h2>
         <div id="adminUserList" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
 
-      <!-- Bonus actuals -->
       <div class="card">
         <h2>Bonus Actuals</h2>
         <div style="display:flex;flex-direction:column;gap:10px;">
@@ -439,15 +446,16 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
           <div id="adminGroupWinners"></div>
           <button class="btn-blue" id="saveActualGroupsBtn">Save Group Winners</button>
           <div class="section-label" style="margin-top:8px;">Actual Overall Winner</div>
-          <input id="actualOverallInput" placeholder="Country name" />
+          <select id="actualOverallSelect">
+            <option value="">— select country —</option>
+          </select>
           <button class="btn-blue" id="saveActualOverallBtn">Save Overall Winner</button>
         </div>
       </div>
     </div>
 
-    <!-- All matches with edit -->
     <div class="card" style="margin-top:0;">
-      <h2>All Matches <span style="font-size:13px;color:var(--muted);font-family:'Audiowide',sans-serif;font-weight:400;">— click ✏️ to edit details</span></h2>
+      <h2>All Matches <span style="font-size:13px;color:var(--muted);font-family:'Audiowide',sans-serif;font-weight:400;">— click ✏️ to edit · 🗑 to delete</span></h2>
       <div id="adminMatchList"></div>
     </div>
   </section>
@@ -471,18 +479,17 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
 
 <div class="toast" id="toast"></div>
 
-<!-- ══════════════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore,
   doc, collection,
-  setDoc, updateDoc, deleteDoc, getDoc,
+  setDoc, updateDoc, deleteDoc, getDoc, getDocs,
   onSnapshot, query, orderBy,
   writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// ── PASTE YOUR FIREBASE CONFIG HERE ──────────────────────────
+// ── FIREBASE CONFIG ───────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyBO3YHKEkvodyB3YUE35JescB3e10ja0uA",
   authDomain: "worldcup-predictor-6fdb8.firebaseapp.com",
@@ -493,6 +500,28 @@ const firebaseConfig = {
   appId: "1:255220213792:web:4d628451b116a95d703445",
   measurementId: "G-6MGEQGYESZ"
 };
+
+//Groupings
+const WC2026_GROUPS = {
+  "Group A": ["Mexico", "South Africa", "South Korea", "Czechia"],
+  "Group B": ["Canada", "Bosnia and Herzegovina", "Qatar", "Switzerland"],
+  "Group C": ["Brazil", "Morocco", "Haiti", "Scotland"],
+  "Group D": ["United States", "Paraguay", "Australia", "Türkiye"],
+  "Group E": ["Germany", "Curaçao", "Ivory Coast", "Ecuador"],
+  "Group F": ["Netherlands", "Japan", "Sweden", "Tunisia"],
+  "Group G": ["Belgium", "Egypt", "Iran", "New Zealand"],
+  "Group H": ["Spain", "Cape Verde", "Saudi Arabia", "Uruguay"],
+  "Group I": ["France", "Senegal", "Iraq", "Norway"],
+  "Group J": ["Argentina", "Algeria", "Austria", "Jordan"],
+  "Group K": ["Portugal", "DR Congo", "Uzbekistan", "Colombia"],
+  "Group L": ["England", "Croatia", "Ghana", "Panama"]
+};
+
+const GROUP_NAMES = Object.keys(WC2026_GROUPS);
+
+// All 48 countries sorted alphabetically for the overall winner dropdown
+const ALL_COUNTRIES = Object.values(WC2026_GROUPS).flat().sort((a, b) => a.localeCompare(b));
+
 // ─────────────────────────────────────────────────────────────
 
 const IS_CONFIGURED = !Object.values(firebaseConfig).some(v => v.startsWith("YOUR_"));
@@ -506,13 +535,10 @@ let _preds    = {};
 let _bonus    = {};
 let _settings = { actualGroupWinners: {}, actualOverallWinner: "" };
 let _session  = null;
-let _showAllPast = false; // toggle for past matches
+let _showAllPast = false;
+let _pendingDeleteMatchId = null;
 
 const ADMIN_PASS = "admin2026";
-const GROUPS = [
-  "Group A","Group B","Group C","Group D","Group E","Group F",
-  "Group G","Group H","Group I","Group J","Group K","Group L"
-];
 const DEFAULT_USERS = [
   {id:"user1",displayName:"Player 1"},
   {id:"user2",displayName:"Player 2"},
@@ -550,12 +576,9 @@ function fmtSGT(iso) {
   }).format(new Date(iso));
 }
 
-// Convert ISO → datetime-local value (SGT)
 function isoToLocal(iso) {
   if (!iso) return "";
-  const d = new Date(iso);
-  // SGT = UTC+8
-  const sgt = new Date(d.getTime() + 8 * 60 * 60 * 1000);
+  const sgt = new Date(new Date(iso).getTime() + 8 * 60 * 60 * 1000);
   return sgt.toISOString().slice(0, 16);
 }
 
@@ -564,10 +587,8 @@ function isLocked(match) {
   return d && new Date() >= new Date(d);
 }
 
-// A match is "old" if its kickoff was more than 24h ago
 function isOldMatch(match) {
-  const kickoff = new Date(match.kickoffTime);
-  return (Date.now() - kickoff.getTime()) > 24 * 60 * 60 * 1000;
+  return (Date.now() - new Date(match.kickoffTime).getTime()) > 24 * 60 * 60 * 1000;
 }
 
 function outcome(h, a) { return h > a ? "home" : a > h ? "away" : "draw"; }
@@ -583,6 +604,18 @@ function setConnected(live) {
   document.getElementById("connLabel").textContent = live ? "Live" : "Offline";
 }
 
+// Populate a <select> with country options
+function buildCountrySelect(selectEl, selectedValue, includeBlank = true) {
+  selectEl.innerHTML = includeBlank ? '<option value="">— select country —</option>' : '';
+  ALL_COUNTRIES.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    if (c === selectedValue) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+}
+
 // ── Recalculate ───────────────────────────────────────────────
 async function recalcAll() {
   if (!db) return;
@@ -590,8 +623,8 @@ async function recalcAll() {
 
   for (const uid of Object.keys(_users)) {
     let matchPts = 0, bonusPts = 0;
-
     const userPreds = _preds[uid] || {};
+
     for (const match of _matches) {
       if (!match.completed) continue;
       const pred = userPreds[match.id];
@@ -606,7 +639,7 @@ async function recalcAll() {
 
     const bp = _bonus[uid] || {};
     const agw = _settings.actualGroupWinners || {};
-    for (const g of GROUPS) {
+    for (const g of GROUP_NAMES) {
       if (agw[g] && bp.groupWinners?.[g] &&
           agw[g].trim().toLowerCase() === bp.groupWinners[g].trim().toLowerCase()) bonusPts += 5;
     }
@@ -627,7 +660,7 @@ async function recalcAll() {
   await batch.commit();
 }
 
-// ── Seed users on first run ───────────────────────────────────
+// ── Seed users ────────────────────────────────────────────────
 async function seedUsersIfNeeded() {
   const snap = await getDoc(doc(db, "users", "user1"));
   if (!snap.exists()) {
@@ -644,7 +677,7 @@ async function seedUsersIfNeeded() {
   }
 }
 
-// ── Real-time listeners ───────────────────────────────────────
+// ── Listeners ─────────────────────────────────────────────────
 function startListeners() {
   unsubscribers.push(
     onSnapshot(collection(db, "users"), snap => {
@@ -696,7 +729,7 @@ function renderAll() {
   if (u?.isAdmin) renderAdmin();
 }
 
-// ── MATCHES tab ───────────────────────────────────────────────
+// ── MATCHES ───────────────────────────────────────────────────
 function renderMatches() {
   const wrap = document.getElementById("matchesList");
   const u    = currentUser();
@@ -704,27 +737,19 @@ function renderMatches() {
   if (!_matches.length) {
     wrap.innerHTML = '<div style="color:var(--muted);padding:20px 0;">No matches yet. Admin will add them soon.</div>';
     document.getElementById("hiddenPastCount").textContent = "";
+    document.getElementById("togglePastBtn").classList.add("hidden");
     return;
   }
 
-  // Split into visible vs hidden-old
-  const now = Date.now();
-  const visibleMatches = [];
-  const oldMatches     = [];
-
+  const visibleMatches = [], oldMatches = [];
   _matches.forEach(m => {
-    if (_showAllPast || !isOldMatch(m)) {
-      visibleMatches.push(m);
-    } else {
-      oldMatches.push(m);
-    }
+    (_showAllPast || !isOldMatch(m) ? visibleMatches : oldMatches).push(m);
   });
 
-  // Update toggle button + count
-  const countEl = document.getElementById("hiddenPastCount");
+  const countEl   = document.getElementById("hiddenPastCount");
   const toggleBtn = document.getElementById("togglePastBtn");
   if (oldMatches.length > 0) {
-    countEl.textContent = _showAllPast ? "" : `${oldMatches.length} older match${oldMatches.length > 1 ? "es" : ""} hidden`;
+    countEl.textContent  = _showAllPast ? "" : `${oldMatches.length} older match${oldMatches.length > 1 ? "es" : ""} hidden`;
     toggleBtn.textContent = _showAllPast ? "Hide Past Matches" : "Show Past Matches";
     toggleBtn.classList.remove("hidden");
   } else {
@@ -733,7 +758,7 @@ function renderMatches() {
   }
 
   if (!visibleMatches.length) {
-    wrap.innerHTML = '<div style="color:var(--muted);padding:20px 0;">No upcoming matches yet.</div>';
+    wrap.innerHTML = '<div style="color:var(--muted);padding:20px 0;">No upcoming matches yet. Check back soon!</div>';
     return;
   }
 
@@ -750,9 +775,6 @@ function renderMatches() {
     const stageLabel = match.stage === "group"
       ? `GROUP STAGE${match.groupName ? " · " + match.groupName : ""}`
       : match.stage;
-
-    // Dim old matches slightly
-    const dimStyle = old && !_showAllPast ? "" : "";
 
     let predHtml = "";
     if (!u) {
@@ -802,21 +824,20 @@ function renderMatches() {
 
     const div = document.createElement("div");
     div.className = "match-item";
-    if (old) div.style.opacity = "0.65";
+    if (old) div.style.opacity = "0.6";
     div.innerHTML = `
       <div class="match-header">
         <div>
           <div class="match-teams">${match.homeTeam} <span style="color:var(--muted);">vs</span> ${match.awayTeam}</div>
           <div class="match-meta">⏰ Kickoff: ${fmtSGT(match.kickoffTime)} &nbsp;·&nbsp; 🔒 Deadline: ${fmtSGT(match.deadline || match.kickoffTime)} &nbsp;·&nbsp; ${stageLabel}</div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;">${pill}</div>
+        <div>${pill}</div>
       </div>
       ${predHtml}
       ${resultHtml}`;
     wrap.appendChild(div);
   });
 
-  // Bind events
   wrap.querySelectorAll("[data-save]").forEach(btn => {
     btn.addEventListener("click", () => {
       const mid  = btn.getAttribute("data-save");
@@ -874,44 +895,67 @@ function renderLeaderboard() {
 
 // ── BONUS ─────────────────────────────────────────────────────
 function renderBonus() {
-  const u = currentUser();
+  const u  = currentUser();
+  const el = document.getElementById("bonusForm");
+
   if (!u || u.isAdmin) {
-    document.getElementById("groupWinnersForm").innerHTML = '<div class="hint">Log in as a player to submit bonus picks.</div>';
-    document.getElementById("overallWinnerForm").innerHTML = "";
+    el.innerHTML = '<div class="hint">Log in as a player to submit bonus picks.</div>';
     return;
   }
+
   const bp = _bonus[u.id] || { groupWinners: {}, overallWinner: "" };
 
-  document.getElementById("groupWinnersForm").innerHTML =
-    GROUPS.map(g => `
-      <div class="bonus-row">
-        <div class="bonus-label">${g}</div>
-        <input style="flex:1;" id="bg-${g.replace(" ", "-")}" value="${bp.groupWinners?.[g] || ""}" placeholder="Team…" />
-      </div>`).join("") +
-    `<button class="btn-gold" style="margin-top:10px;" id="saveBonusGroupsBtn">Save Group Picks</button>`;
+  // Build group cards
+  let html = '<div style="display:flex;flex-direction:column;gap:12px;">';
 
-  document.getElementById("overallWinnerForm").innerHTML = `
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>World Cup Winner</label>
-      <input id="overallPick" value="${bp.overallWinner || ""}" placeholder="e.g. Brazil" />
-    </div>
-    <button class="btn-gold" id="saveBonusOverallBtn">Save Overall Pick</button>`;
+  GROUP_NAMES.forEach(g => {
+    const teams  = WC2026_GROUPS[g];
+    const selId  = `bg-${g.replace(" ", "-")}`;
+    const saved  = bp.groupWinners?.[g] || "";
+    const opts   = teams.map(t => `<option value="${t}"${t === saved ? " selected" : ""}>${t}</option>`).join("");
+    html += `
+      <div class="bonus-group-card">
+        <div class="bonus-group-header">${g} — pick the winner <span style="color:var(--gold);font-weight:700;">+5 pts</span></div>
+        <div class="bonus-group-teams">${teams.join(" · ")}</div>
+        <select id="${selId}">
+          <option value="">— select winner —</option>
+          ${opts}
+        </select>
+      </div>`;
+  });
+
+  html += `</div>
+    <button class="btn-gold" style="margin-top:16px;width:100%;" id="saveBonusGroupsBtn">Save All Group Picks</button>
+    <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--heading);margin-bottom:6px;">Overall World Cup Winner <span style="color:var(--gold);font-size:14px;">+20 pts</span></div>
+      <div class="hint" style="margin-bottom:12px;">Who will lift the trophy on 19 Jul 2026?</div>
+      <select id="overallPickSel" style="margin-bottom:12px;">
+        <option value="">— select country —</option>
+        ${ALL_COUNTRIES.map(c => `<option value="${c}"${c === (bp.overallWinner || "") ? " selected" : ""}>${c}</option>`).join("")}
+      </select>
+      <button class="btn-gold" style="width:100%;" id="saveBonusOverallBtn">Save Overall Pick</button>
+    </div>`;
+
+  el.innerHTML = html;
 
   document.getElementById("saveBonusGroupsBtn").addEventListener("click", async () => {
-    if (!u || !db) return;
+    if (!db) return;
     const gw = {};
-    GROUPS.forEach(g => { gw[g] = document.getElementById(`bg-${g.replace(" ", "-")}`)?.value.trim() || ""; });
+    GROUP_NAMES.forEach(g => {
+      gw[g] = document.getElementById(`bg-${g.replace(" ", "-")}`)?.value || "";
+    });
     await setDoc(doc(db, "bonus", u.id), { groupWinners: gw, overallWinner: bp.overallWinner || "" }, { merge: true });
     await recalcAll();
-    toast("Group picks saved!", "success");
+    toast("Group picks saved! ✅", "success");
   });
 
   document.getElementById("saveBonusOverallBtn").addEventListener("click", async () => {
-    if (!u || !db) return;
-    const ow = document.getElementById("overallPick")?.value.trim() || "";
+    if (!db) return;
+    const ow = document.getElementById("overallPickSel")?.value || "";
+    if (!ow) { toast("Please select a country.", "error"); return; }
     await setDoc(doc(db, "bonus", u.id), { overallWinner: ow, groupWinners: bp.groupWinners || {} }, { merge: true });
     await recalcAll();
-    toast("Overall winner pick saved!", "success");
+    toast(`Overall winner pick saved: ${ow} 🏆`, "success");
   });
 }
 
@@ -924,7 +968,7 @@ function renderAdmin() {
 
   sel.onchange = () => {
     const m = _matches.find(x => x.id === sel.value);
-    const disp = document.getElementById("currentScoreDisplay");
+    const disp     = document.getElementById("currentScoreDisplay");
     const clearBtn = document.getElementById("clearResultBtn");
     if (m?.completed) {
       disp.style.display = "";
@@ -968,26 +1012,38 @@ function renderAdmin() {
     });
   });
 
-  // Bonus actuals
+  // Bonus actuals — group dropdowns (one per group, showing only that group's teams)
   const agwWrap = document.getElementById("adminGroupWinners");
-  agwWrap.innerHTML = GROUPS.map(g => `
-    <div class="bonus-row" style="margin-bottom:6px;">
-      <div class="bonus-label">${g}</div>
-      <input style="flex:1;" id="agw-${g.replace(" ", "-")}" value="${_settings.actualGroupWinners?.[g] || ""}" placeholder="Team…" />
-    </div>`).join("");
-  document.getElementById("actualOverallInput").value = _settings.actualOverallWinner || "";
+  agwWrap.innerHTML = GROUP_NAMES.map(g => {
+    const teams = WC2026_GROUPS[g];
+    const saved = _settings.actualGroupWinners?.[g] || "";
+    const opts  = teams.map(t => `<option value="${t}"${t === saved ? " selected" : ""}>${t}</option>`).join("");
+    return `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="min-width:76px;font-size:12px;font-weight:700;color:var(--gold);">${g}</div>
+        <select id="agw-${g.replace(" ", "-")}" style="flex:1;">
+          <option value="">— winner —</option>
+          ${opts}
+        </select>
+      </div>`;
+  }).join("");
+
+  // Overall winner admin dropdown
+  const overallSel = document.getElementById("actualOverallSelect");
+  buildCountrySelect(overallSel, _settings.actualOverallWinner || "");
 
   document.getElementById("saveActualGroupsBtn").onclick = async () => {
     if (!db) return;
     const gw = {};
-    GROUPS.forEach(g => { gw[g] = document.getElementById(`agw-${g.replace(" ", "-")}`)?.value.trim() || ""; });
+    GROUP_NAMES.forEach(g => { gw[g] = document.getElementById(`agw-${g.replace(" ", "-")}`)?.value || ""; });
     await setDoc(doc(db, "settings", "app"), { actualGroupWinners: gw }, { merge: true });
     await recalcAll();
     toast("Actual group winners saved.", "success");
   };
+
   document.getElementById("saveActualOverallBtn").onclick = async () => {
     if (!db) return;
-    const ow = document.getElementById("actualOverallInput")?.value.trim() || "";
+    const ow = document.getElementById("actualOverallSelect")?.value || "";
     await setDoc(doc(db, "settings", "app"), { actualOverallWinner: ow }, { merge: true });
     await recalcAll();
     toast("Actual overall winner saved.", "success");
@@ -996,7 +1052,7 @@ function renderAdmin() {
   renderAdminMatchList();
 }
 
-// ── Admin: all matches list with edit + score ─────────────────
+// ── Admin match list ──────────────────────────────────────────
 function renderAdminMatchList() {
   const wrap = document.getElementById("adminMatchList");
   if (!_matches.length) { wrap.innerHTML = '<div class="hint">No matches added yet.</div>'; return; }
@@ -1014,7 +1070,8 @@ function renderAdminMatchList() {
         <button class="btn-blue" style="padding:6px 12px;font-size:12px;" data-aml-save="${m.id}">${m.completed ? "Update" : "Set"}</button>
         ${m.completed ? `<button class="btn-ghost" style="padding:6px 12px;font-size:12px;color:var(--red);border-color:var(--red);" data-aml-clear="${m.id}">Clear</button>` : ""}
       </div>
-      <button class="btn-ghost" style="padding:6px 12px;font-size:13px;" data-edit-match="${m.id}" title="Edit match details">✏️</button>
+      <button class="btn-ghost" style="padding:6px 12px;font-size:13px;" data-edit-match="${m.id}" title="Edit match">✏️</button>
+      <button class="btn-warn" style="padding:6px 12px;font-size:13px;" data-delete-match="${m.id}" title="Delete match">🗑</button>
       <span class="pill ${m.completed ? "pill-done" : isLocked(m) ? "pill-locked" : "pill-open"}">${m.completed ? "Done" : isLocked(m) ? "Locked" : "Open"}</span>
     </div>`).join("");
 
@@ -1033,19 +1090,22 @@ function renderAdminMatchList() {
   wrap.querySelectorAll("[data-edit-match]").forEach(btn => {
     btn.addEventListener("click", () => openEditMatch(btn.getAttribute("data-edit-match")));
   });
+  wrap.querySelectorAll("[data-delete-match]").forEach(btn => {
+    btn.addEventListener("click", () => openConfirmDelete(btn.getAttribute("data-delete-match")));
+  });
 }
 
 // ── Edit Match Modal ──────────────────────────────────────────
 function openEditMatch(matchId) {
   const m = _matches.find(x => x.id === matchId);
   if (!m) return;
-  document.getElementById("editMatchId").value    = matchId;
-  document.getElementById("editHomeTeam").value   = m.homeTeam;
-  document.getElementById("editAwayTeam").value   = m.awayTeam;
-  document.getElementById("editKickoff").value    = isoToLocal(m.kickoffTime);
-  document.getElementById("editDeadline").value   = m.deadline && m.deadline !== m.kickoffTime ? isoToLocal(m.deadline) : "";
-  document.getElementById("editStage").value      = m.stage;
-  document.getElementById("editGroupName").value  = m.groupName || "";
+  document.getElementById("editMatchId").value   = matchId;
+  document.getElementById("editHomeTeam").value  = m.homeTeam;
+  document.getElementById("editAwayTeam").value  = m.awayTeam;
+  document.getElementById("editKickoff").value   = isoToLocal(m.kickoffTime);
+  document.getElementById("editDeadline").value  = m.deadline && m.deadline !== m.kickoffTime ? isoToLocal(m.deadline) : "";
+  document.getElementById("editStage").value     = m.stage;
+  document.getElementById("editGroupName").value = m.groupName || "";
   document.getElementById("editMatchModal").classList.remove("hidden");
 }
 
@@ -1062,36 +1122,51 @@ document.getElementById("saveEditMatchBtn").addEventListener("click", async () =
   const deadline = document.getElementById("editDeadline").value;
   const stage    = document.getElementById("editStage").value;
   const group    = document.getElementById("editGroupName").value.trim();
-
-  if (!home || !away || !kickoff) { toast("Home team, away team and kickoff are required.", "error"); return; }
-
+  if (!home || !away || !kickoff) { toast("Home, away team and kickoff are required.", "error"); return; }
   await updateDoc(doc(db, "matches", matchId), {
-    homeTeam:    home,
-    awayTeam:    away,
+    homeTeam: home, awayTeam: away,
     kickoffTime: new Date(kickoff).toISOString(),
     deadline:    deadline ? new Date(deadline).toISOString() : new Date(kickoff).toISOString(),
-    stage,
-    groupName:   stage === "group" ? group : "",
-    updatedAt:   serverTimestamp()
+    stage, groupName: stage === "group" ? group : "",
+    updatedAt: serverTimestamp()
   });
   toast("Match updated! ✅", "success");
   closeEditMatch();
 });
 
-document.getElementById("deleteMatchBtn").addEventListener("click", async () => {
-  if (!db) return;
+// The delete button inside the edit modal opens the same confirm dialog
+document.getElementById("deleteMatchBtn").addEventListener("click", () => {
   const matchId = document.getElementById("editMatchId").value;
-  if (!confirm("Delete this match? This cannot be undone and will remove all predictions for it.")) return;
+  closeEditMatch();
+  openConfirmDelete(matchId);
+});
 
-  // Delete the match doc
+// ── Confirm Delete Dialog ─────────────────────────────────────
+function openConfirmDelete(matchId) {
+  _pendingDeleteMatchId = matchId;
+  const m = _matches.find(x => x.id === matchId);
+  document.getElementById("confirmDeleteMsg").textContent =
+    `Delete "${m ? m.homeTeam + " vs " + m.awayTeam : "this match"}"? All player predictions for it will also be removed. This cannot be undone.`;
+  document.getElementById("confirmDeleteOverlay").classList.remove("hidden");
+}
+
+document.getElementById("confirmCancelBtn").addEventListener("click", () => {
+  document.getElementById("confirmDeleteOverlay").classList.add("hidden");
+  _pendingDeleteMatchId = null;
+});
+
+document.getElementById("confirmDeleteBtn").addEventListener("click", async () => {
+  if (!db || !_pendingDeleteMatchId) return;
+  const matchId = _pendingDeleteMatchId;
+  document.getElementById("confirmDeleteOverlay").classList.add("hidden");
+  _pendingDeleteMatchId = null;
+
   await deleteDoc(doc(db, "matches", matchId));
 
-  // Remove this matchId from every user's predictions
+  // Remove from every user's prediction doc
   const batch = writeBatch(db);
   for (const uid of Object.keys(_preds)) {
-    if (_preds[uid][matchId]) {
-      // We can't use deleteField on a nested key via updateDoc easily in v10 modular,
-      // so we rewrite the prediction doc without the deleted match
+    if (_preds[uid]?.[matchId]) {
       const updated = { ..._preds[uid] };
       delete updated[matchId];
       batch.set(doc(db, "predictions", uid), updated);
@@ -1100,10 +1175,9 @@ document.getElementById("deleteMatchBtn").addEventListener("click", async () => 
   await batch.commit();
   await recalcAll();
   toast("Match deleted.", "info");
-  closeEditMatch();
 });
 
-// ── ACTIONS ───────────────────────────────────────────────────
+// ── Score Actions ─────────────────────────────────────────────
 async function savePrediction(matchId, home, away) {
   const u = currentUser();
   if (!u || u.isAdmin || !db) return;
@@ -1121,10 +1195,8 @@ async function savePrediction(matchId, home, away) {
 async function adminSetScore(matchId, home, away) {
   if (!db) return;
   await updateDoc(doc(db, "matches", matchId), {
-    resultHome: Math.max(0, Number(home)),
-    resultAway: Math.max(0, Number(away)),
-    completed:  true,
-    updatedAt:  serverTimestamp()
+    resultHome: Math.max(0, Number(home)), resultAway: Math.max(0, Number(away)),
+    completed: true, updatedAt: serverTimestamp()
   });
   await recalcAll();
   toast("Score saved & points recalculated! 🏆", "success");
@@ -1133,14 +1205,13 @@ async function adminSetScore(matchId, home, away) {
 async function adminClearScore(matchId) {
   if (!db) return;
   await updateDoc(doc(db, "matches", matchId), {
-    resultHome: null, resultAway: null, completed: false,
-    updatedAt: serverTimestamp()
+    resultHome: null, resultAway: null, completed: false, updatedAt: serverTimestamp()
   });
   await recalcAll();
   toast("Result cleared.", "success");
 }
 
-// ── LOGIN / LOGOUT ────────────────────────────────────────────
+// ── Login / Logout ────────────────────────────────────────────
 function buildLoginGrid() {
   const grid  = document.getElementById("userGrid");
   const users = IS_CONFIGURED ? Object.values(_users) : DEFAULT_USERS;
@@ -1180,8 +1251,7 @@ document.getElementById("adminPassInput").addEventListener("keydown", e => {
 });
 
 window.logout = function() {
-  _session = null;
-  saveSession(null);
+  _session = null; saveSession(null);
   document.getElementById("loginOverlay").classList.remove("hidden");
   document.getElementById("adminLoginSection").classList.add("hidden");
   document.getElementById("adminPassInput").value = "";
@@ -1213,13 +1283,11 @@ document.getElementById("saveProfileBtn").addEventListener("click", async () => 
   closeProfile();
 });
 
-// ── Show/hide past matches toggle ─────────────────────────────
 document.getElementById("togglePastBtn").addEventListener("click", () => {
   _showAllPast = !_showAllPast;
   renderMatches();
 });
 
-// ── Add match ─────────────────────────────────────────────────
 document.getElementById("addMatchBtn").addEventListener("click", async () => {
   if (!db) { toast("Firebase not configured.", "error"); return; }
   const home    = document.getElementById("homeTeam").value.trim();
@@ -1288,15 +1356,13 @@ document.querySelectorAll(".tab").forEach(btn => {
     }
 
     if (!_session) {
-        // Fetch users once so the login grid has names to show
-        const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-        const snap = await getDocs(collection(db, "users"));
-        snap.forEach(d => { _users[d.id] = { id: d.id, ...d.data() }; });
-        document.getElementById("loginOverlay").classList.remove("hidden");
-        buildLoginGrid();
+      const snap = await getDocs(collection(db, "users"));
+      snap.forEach(d => { _users[d.id] = { id: d.id, ...d.data() }; });
+      document.getElementById("loginOverlay").classList.remove("hidden");
+      buildLoginGrid();
     } else {
-        document.getElementById("loginOverlay").classList.add("hidden");
-        renderAll();
+      document.getElementById("loginOverlay").classList.add("hidden");
+      renderAll();
     }
   } catch (err) {
     console.error("Firebase init error:", err);

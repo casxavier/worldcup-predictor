@@ -198,7 +198,7 @@ img,svg{max-width:100%}
   font-size:14px;font-weight:700;letter-spacing:1px;
   text-transform:uppercase;color:var(--gold);
   cursor:pointer;transition:all .2s;
-  <max-width:160></max-width:160>px;
+  max-width:160px;
 }
 .user-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .user-badge:hover{background:rgba(201,168,76,0.14);border-color:var(--gold)}
@@ -552,15 +552,6 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 /* ── MOBILE ── */
 @media(max-width:640px){
   body{font-size:13px}
-
-  .topbar-inner{padding:12px 14px;gap:10px}
-  .topbar::before{font-size:34px;letter-spacing:3px}
-  .logo-main{font-size:22px;letter-spacing:1px}
-  .logo-sub{font-size:9px;letter-spacing:2px}
-  .topbar-right{width:100%;justify-content:space-between}
-  .user-badge{flex:1;justify-content:center;max-width:none;padding:8px 10px;font-size:12px}
-  .btn-logout{padding:8px 10px;font-size:11px}
-  .conn-indicator{display:none}
 
   .tabs{padding:0 8px}
   .tab{padding:10px 14px;font-size:12px;letter-spacing:1px}

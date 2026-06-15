@@ -22,7 +22,6 @@ const ALL_COUNTRIES = Object.values(WC2026_GROUPS).flat().sort((a, b) => a.local
 
 const ADMIN_PASS = "admin2026";
 const BONUS_DEADLINE = "2026-06-15T23:59:00+08:00";
-// FIX 1: was Date(...) instead of new Date(...)
 const isBonusLocked = () => new Date() >= new Date(BONUS_DEADLINE);
 const DEFAULT_USERS = [
   { id: "user1", displayName: "Player 1" },
@@ -636,7 +635,6 @@ function useFirebase(toast) {
   const [settings, setSettings] = useState({ actualGroupWinners: {}, actualOverallWinner: "" });
   const unsubs = useRef([]);
 
-  // FIX 2: Keep live refs so recalcAll always uses freshest data
   const usersRef = useRef({});
   const matchesRef = useRef([]);
   const predsRef = useRef({});
@@ -723,8 +721,6 @@ function useFirebase(toast) {
     return () => unsubs.current.forEach(u => u());
   }, [loadFirebase]);
 
-  // FIX 3: recalcAll uses ref data by default (always fresh), but accepts
-  // override params for cases where we've just written and refs aren't updated yet.
   const recalcAll = useCallback(async (overrideUsers, overrideMatches, overridePreds, overrideBonus, overrideSettings) => {
     if (!db) return;
     const { firestore, doc, writeBatch, setDoc } = db;
@@ -737,7 +733,6 @@ function useFirebase(toast) {
 
     const batch = writeBatch(firestore);
 
-    // FIX 4: Also write pts back to each prediction document so match cards show correct pts
     const predUpdates = {}; // uid -> { matchId -> pts }
 
     for (const uid of Object.keys(curUsers)) {
@@ -1493,69 +1488,133 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
       </div>
 
       <div className="card" style={{ marginTop: 0 }}>
-        <h2>All Matches <span style={{ fontSize: 13, color: "var(--muted)", fontFamily: "'Audiowide',sans-serif", fontWeight: 400 }}>— click ✏️ to edit · 🗑 to delete</span></h2>
+        <h2>All Matches <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400 }}>— click a row to see predictions</span></h2>
         {!matches.length ? <div className="hint">No matches added yet.</div> : (
-          matches.map(m => {
-            const [mH, setMH] = useState(m.resultHome ?? "");
-            const [mA, setMA] = useState(m.resultAway ?? "");
-            return (
-              <div className="card" style={{ marginTop: 0 }}>
-        <h2>All Matches <span style={{ fontSize: 13, color: "var(--muted)", fontFamily: "'Audiowide',sans-serif", fontWeight: 400 }}>— click ✏️ to edit · 🗑 to delete</span></h2>
-        {!matches.length ? <div className="hint">No matches added yet.</div> : (
-          matches.map(m => {
-            const [mH, setMH] = useState(m.resultHome ?? "");
-            const [mA, setMA] = useState(m.resultAway ?? "");
-            const pickRows = Object.entries(preds)
-              .filter(([, mp]) => mp[m.id])
-              .map(([uid, mp]) => ({ uid, u: users[uid], p: mp[m.id] }))
-              .sort((a, b) => (b.p.pts ?? 0) - (a.p.pts ?? 0));
-            return (
-              <div key={m.id} style={{ marginBottom: 8 }}>
-                <div className="admin-match-row" style={pickRows.length ? { marginBottom: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: "none" } : {}}>
-                  <div style={{ flex: 1, minWidth: 160 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: "var(--heading)" }}>{m.homeTeam} vs {m.awayTeam}</div>
-                    <div className="hint">{fmtSGT(m.kickoffTime)} · {m.stage}{m.groupName ? " · " + m.groupName : ""}</div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <input type="number" min="0" value={mH} onChange={e => setMH(e.target.value)} placeholder="H" style={{ width: 56 }} />
-                    <span className="vs" style={{ fontSize: 13 }}>–</span>
-                    <input type="number" min="0" value={mA} onChange={e => setMA(e.target.value)} placeholder="A" style={{ width: 56 }} />
-                    <button className="btn-blue" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => saveResult(m.id, mH, mA)}>{m.completed ? "Update" : "Set"}</button>
-                    {m.completed && <button className="btn-ghost" style={{ padding: "6px 12px", fontSize: 12, color: "var(--red)", borderColor: "var(--red)" }} onClick={() => clearResult(m.id)}>Clear</button>}
-                  </div>
-                  <button className="btn-ghost" style={{ padding: "6px 12px", fontSize: 13 }} onClick={() => setEditMatch(m)} title="Edit match">✏️</button>
-                  <button className="btn-warn" style={{ padding: "6px 12px", fontSize: 13 }} onClick={() => setConfirmDelete(m.id)} title="Delete match">🗑</button>
-                  <span className={`pill ${m.completed ? "pill-done" : isLocked(m) ? "pill-locked" : "pill-open"}`}>
-                    {m.completed ? "Done" : isLocked(m) ? "Locked" : "Open"}
-                  </span>
-                </div>
-                {pickRows.length > 0 && (
-                  <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderTop: "none", borderBottomLeftRadius: 8, borderBottomRightRadius: 8, padding: "8px 12px", display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {pickRows.map(({ uid, u, p }) => {
-                      const reason = m.completed ? ptsReason(p.pts ?? 0) : null;
-                      return (
-                        <span key={uid} style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'Barlow Condensed',sans-serif" }}>
-                          {u?.displayName || uid}: <strong style={{ color: "var(--text)" }}>{p.home}–{p.away}</strong>
-                          {m.completed && (
-                            <> · <span style={{ color: reason.color, fontWeight: 700 }}>{reason.label}</span> · <span className={`pts-badge${(p.pts ?? 0) === 0 ? " zero" : ""}`} style={{ fontSize: 10, padding: "1px 6px" }}>{p.pts ?? 0}pt{p.pts !== 1 ? "s" : ""}</span></>
-                          )}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
-            );
-          })
+          matches.map(m => (
+            <AdminMatchRow
+              key={m.id}
+              m={m}
+              preds={preds}
+              users={users}
+              onSaveResult={saveResult}
+              onClearResult={clearResult}
+              onEdit={() => setEditMatch(m)}
+              onDelete={() => setConfirmDelete(m.id)}
+            />
+          ))
         )}
       </div>
     </>
   );
 }
+
+// ── ADMIN MATCH ROW ───────────────────────────────────────────────────────
+function AdminMatchRow({ m, preds, users, onSaveResult, onClearResult, onEdit, onDelete }) {
+  const [mH, setMH] = useState(m.resultHome ?? "");
+  const [mA, setMA] = useState(m.resultAway ?? "");
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setMH(m.resultHome ?? "");
+    setMA(m.resultAway ?? "");
+  }, [m.resultHome, m.resultAway]);
+
+  const playerRows = Object.entries(preds)
+    .filter(([, mp]) => mp[m.id])
+    .map(([uid, mp]) => ({ uid, u: users[uid], p: mp[m.id] }))
+    .sort((a, b) => (a.u?.displayName || "").localeCompare(b.u?.displayName || ""));
+
+  const hasPreds = playerRows.length > 0;
+
+  return (
+    <div style={{ marginBottom: 8 }}>
+      {/* Main row */}
+      <div
+        className="admin-match-row"
+        style={{ cursor: hasPreds ? "pointer" : "default", borderRadius: open ? "8px 8px 0 0" : 8, marginBottom: 0 }}
+        onClick={() => hasPreds && setOpen(o => !o)}
+      >
+        <div style={{ flex: 1, minWidth: 160 }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: "var(--heading)" }}>{m.homeTeam} vs {m.awayTeam}</div>
+          <div className="hint">{fmtSGT(m.kickoffTime)} · {m.stage}{m.groupName ? " · " + m.groupName : ""}
+            {hasPreds && <span style={{ color: "var(--gold)", marginLeft: 8 }}>{playerRows.length} pick{playerRows.length !== 1 ? "s" : ""} {open ? "▲" : "▼"}</span>}
+            {!hasPreds && <span style={{ color: "var(--muted)", marginLeft: 8 }}>no picks yet</span>}
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }} onClick={e => e.stopPropagation()}>
+          <input type="number" min="0" value={mH} onChange={e => setMH(e.target.value)} placeholder="H" style={{ width: 56 }} />
+          <span className="vs" style={{ fontSize: 13 }}>–</span>
+          <input type="number" min="0" value={mA} onChange={e => setMA(e.target.value)} placeholder="A" style={{ width: 56 }} />
+          <button className="btn-blue" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => onSaveResult(m.id, mH, mA)}>{m.completed ? "Update" : "Set"}</button>
+          {m.completed && <button className="btn-ghost" style={{ padding: "6px 12px", fontSize: 12, color: "var(--red)", borderColor: "var(--red)" }} onClick={() => onClearResult(m.id)}>Clear</button>}
+        </div>
+        <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+          <button className="btn-ghost" style={{ padding: "6px 10px", fontSize: 13 }} onClick={onEdit} title="Edit match">✏️</button>
+          <button className="btn-warn" style={{ padding: "6px 10px", fontSize: 13 }} onClick={onDelete} title="Delete match">🗑</button>
+        </div>
+        <span className={`pill ${m.completed ? "pill-done" : isLocked(m) ? "pill-locked" : "pill-open"}`}>
+          {m.completed ? "Done" : isLocked(m) ? "Locked" : "Open"}
+        </span>
+      </div>
+
+      {/* Expanded predictions table */}
+      {open && hasPreds && (
+        <div style={{ border: "1px solid var(--border)", borderTop: "none", borderRadius: "0 0 8px 8px", overflow: "hidden", background: "var(--bg)" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "rgba(201,168,76,0.08)" }}>
+                <th style={thStyle}>Player</th>
+                <th style={{ ...thStyle, textAlign: "center" }}>Prediction</th>
+                {m.completed && <>
+                  <th style={{ ...thStyle, textAlign: "center" }}>Result</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>Outcome</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>Pts</th>
+                </>}
+              </tr>
+            </thead>
+            <tbody>
+              {playerRows.map(({ uid, u, p }) => {
+                const pts = m.completed
+                  ? (p.pts ?? calcPts(Number(p.home), Number(p.away), Number(m.resultHome), Number(m.resultAway)))
+                  : null;
+                const reason = m.completed ? ptsReason(pts) : null;
+                return (
+                  <tr key={uid} style={{ borderTop: "1px solid var(--border)" }}>
+                    <td style={tdStyle}>{u?.displayName || uid}</td>
+                    <td style={{ ...tdStyle, textAlign: "center", fontWeight: 700, color: "var(--text)" }}>
+                      {p.home} – {p.away}
+                    </td>
+                    {m.completed && <>
+                      <td style={{ ...tdStyle, textAlign: "center", color: "var(--gold-bright)", fontWeight: 700 }}>
+                        {m.resultHome} – {m.resultAway}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "center", color: reason.color, fontWeight: 700, fontSize: 11 }}>
+                        {reason.label}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "center" }}>
+                        <span className={`pts-badge${pts === 0 ? " zero" : ""}`}>{pts}pt{pts !== 1 ? "s" : ""}</span>
+                      </td>
+                    </>}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const thStyle = {
+  padding: "7px 14px", fontSize: 10, color: "var(--gold)",
+  textAlign: "left", fontFamily: "'Barlow Condensed',sans-serif",
+  letterSpacing: 1, textTransform: "uppercase", fontWeight: 700,
+};
+const tdStyle = {
+  padding: "8px 14px", fontSize: 13,
+  color: "var(--muted-l)", fontFamily: "'Barlow Condensed',sans-serif",
+};
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────
 function LoginOverlay({ users, onLogin, onAdminLogin }) {
@@ -1668,7 +1727,6 @@ export default function App() {
       predData.pts = calcPts(predData.home, predData.away, Number(match.resultHome), Number(match.resultAway));
     }
     await setDoc(doc(firestore, "predictions", user.id), { [matchId]: predData }, { merge: true });
-    // FIX 5: pass null so recalcAll reads fresh ref data after the write above
     await recalcAll(null, null, null, null, null);
     toast.show("Prediction saved! ⚽", "success");
   };

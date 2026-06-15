@@ -36,14 +36,7 @@ const DEFAULT_USERS = [
 ];
 
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBO3YHKEkvodyB3YUE35JescB3e10ja0uA",
-  authDomain: "worldcup-predictor-6fdb8.firebaseapp.com",
-  databaseURL: "https://worldcup-predictor-6fdb8-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "worldcup-predictor-6fdb8",
-  storageBucket: "worldcup-predictor-6fdb8.firebasestorage.app",
-  messagingSenderId: "255220213792",
-  appId: "1:255220213792:web:4d628451b116a95d703445",
-  measurementId: "G-6MGEQGYESZ",
+// IGNORE
 };
 
 // ── HELPERS ───────────────────────────────────────────────────────────────

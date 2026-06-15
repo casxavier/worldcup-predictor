@@ -146,13 +146,13 @@ img,svg{max-width:100%}
 }
 .topbar-inner{
   max-width:1100px;margin:0 auto;
-  padding:14px 20px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap;
   position:relative;z-index:1;
 }
 
 /* LOGO */
-.logo{line-height:1;user-select:none;min-width:0}
+.logo{line-height:1;user-select:none;min-width:0;flex-shrink:1}
 .logo-eyebrow{
   font-family:'Barlow Condensed',sans-serif;
   font-size:10px;font-weight:600;
@@ -161,7 +161,7 @@ img,svg{max-width:100%}
 }
 .logo-main{
   font-family:'Barlow Condensed',sans-serif;
-  font-size:28px;font-weight:900;
+  font-size:22px;font-weight:900;
   letter-spacing:2px;text-transform:uppercase;
   color:var(--heading);line-height:1;
 }
@@ -169,6 +169,9 @@ img,svg{max-width:100%}
 .logo-main .year{
   color:var(--heading);
   margin-left:4px;
+}
+@media(min-width:500px){
+  .logo-main{font-size:28px}
 }
 .logo-sub{
   font-family:'Barlow Condensed',sans-serif;
@@ -188,18 +191,20 @@ img,svg{max-width:100%}
 .flag-ca-r{background:#FF0000}
 .flag-ca-w{background:#fff}
 
-.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.topbar-right{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;justify-content:flex-end;flex-shrink:0}
+
+.conn-indicator{display:none} /* hidden on mobile by default, shown on wider screens */
 
 .user-badge{
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:6px;
   background:rgba(201,168,76,0.08);
   border:1px solid rgba(201,168,76,0.3);
-  border-radius:4px;padding:6px 14px;
+  border-radius:4px;padding:5px 10px;
   font-family:'Barlow Condensed',sans-serif;
-  font-size:14px;font-weight:700;letter-spacing:1px;
+  font-size:13px;font-weight:700;letter-spacing:1px;
   text-transform:uppercase;color:var(--gold);
   cursor:pointer;transition:all .2s;
-  max-width:160px;
+  max-width:120px;flex-shrink:1;min-width:0;
 }
 .user-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .user-badge:hover{background:rgba(201,168,76,0.14);border-color:var(--gold)}
@@ -210,13 +215,20 @@ img,svg{max-width:100%}
 .btn-logout{
   display:flex;align-items:center;gap:6px;
   background:transparent;border:1px solid var(--border);
-  border-radius:4px;padding:6px 14px;
+  border-radius:4px;padding:5px 10px;
   font-family:'Barlow Condensed',sans-serif;
-  font-size:13px;font-weight:600;letter-spacing:1px;
+  font-size:12px;font-weight:600;letter-spacing:1px;
   text-transform:uppercase;color:var(--muted-l);
-  cursor:pointer;transition:.2s;
+  cursor:pointer;transition:.2s;white-space:nowrap;flex-shrink:0;
 }
 .btn-logout:hover{border-color:var(--red-bright);color:var(--red-bright)}
+
+@media(min-width:500px){
+  .conn-indicator{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-family:'Barlow',sans-serif}
+  .topbar-right{gap:8px}
+  .user-badge{max-width:160px;padding:6px 14px;font-size:14px}
+  .btn-logout{padding:6px 14px;font-size:13px}
+}
 
 /* ── TABS ── */
 .tabs{
@@ -519,7 +531,6 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 .bonus-group-teams{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7}
 
 /* ── STATUS / ADMIN ── */
-.conn-indicator{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-family:'Barlow',sans-serif}
 .dot-live{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
 .dot-live.live{background:var(--malachite-l)}
 .show-past-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
@@ -853,13 +864,27 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
       {match.completed && (
         <div className="result-notice">
           ⚽ Final: <strong>{match.homeTeam} {match.resultHome} – {match.resultAway} {match.awayTeam}</strong>
-          {userPred && !user?.isAdmin && (
-            <> · Your points: <span className={`pts-badge${(userPred.pts ?? 0) === 0 ? " zero" : ""}`}>{userPred.pts ?? 0}pt{userPred.pts !== 1 ? "s" : ""}</span></>
-          )}
+          {userPred && !user?.isAdmin && (() => {
+            const pts = userPred.pts ?? 0;
+            const reason = ptsReason(pts);
+            return (
+              <> · Your pick: <strong style={{ color: "var(--text)" }}>{userPred.home}–{userPred.away}</strong>
+              {" "}· <span style={{ color: reason.color, fontWeight: 700, fontSize: 12 }}>{reason.label}</span>
+              {" "}· <span className={`pts-badge${pts === 0 ? " zero" : ""}`}>{pts}pt{pts !== 1 ? "s" : ""}</span></>
+            );
+          })()}
         </div>
       )}
     </div>
   );
+}
+
+// ── PTS REASON LABEL ─────────────────────────────────────────────────────
+function ptsReason(pts) {
+  if (pts === 3) return { label: "Exact Score", color: "var(--gold-bright)" };
+  if (pts === 2) return { label: "Correct Diff", color: "var(--malachite-l)" };
+  if (pts === 1) return { label: "Correct Winner", color: "#7EB8FF" };
+  return { label: "No Points", color: "var(--muted)" };
 }
 
 // ── MATCHES TAB ───────────────────────────────────────────────────────────
@@ -893,68 +918,174 @@ function MatchesTab({ user, matches, preds, users, onSavePred, onSetScore, onCle
       {matches.length > 0 && !visible.length && <div style={{ color: "var(--muted)", padding: "20px 0" }}>No upcoming matches yet. Check back soon!</div>}
 
       {visible.map(match => (
-        <MatchItem
-          key={match.id}
-          match={match}
-          user={user}
-          preds={userPreds}
-          onSavePred={onSavePred}
-          onSetScore={onSetScore}
-          onClearScore={onClearScore}
-        />
-      ))}
-
-      {user?.isAdmin && visible.map(match => {
-        const allP = Object.entries(preds)
-          .filter(([, mp]) => mp[match.id])
-          .map(([uid, mp]) => {
-            const u = users[uid];
-            const p = mp[match.id];
+        <div key={match.id}>
+          <MatchItem
+            match={match}
+            user={user}
+            preds={userPreds}
+            onSavePred={onSavePred}
+            onSetScore={onSetScore}
+            onClearScore={onClearScore}
+          />
+          {/* Admin: per-player picks table under each match */}
+          {user?.isAdmin && match.completed && (() => {
+            const rows = Object.entries(preds)
+              .filter(([, mp]) => mp[match.id])
+              .map(([uid, mp]) => ({ uid, u: users[uid], p: mp[match.id] }))
+              .sort((a, b) => (b.p.pts ?? 0) - (a.p.pts ?? 0));
+            if (!rows.length) return null;
             return (
-              <span key={uid} style={{ fontSize: 12, color: "var(--muted)" }}>
-                {u?.displayName || uid}: <strong style={{ color: "var(--text)" }}>{p.home}–{p.away}</strong>
-                {match.completed && <span className={`pts-badge${(p.pts ?? 0) === 0 ? " zero" : ""}`} style={{ marginLeft: 4 }}>{p.pts ?? 0}pt{p.pts !== 1 ? "s" : ""}</span>}
-              </span>
+              <div style={{ marginTop: -6, marginBottom: 12, background: "rgba(201,168,76,0.04)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 0 }}>
+                  <thead>
+                    <tr style={{ background: "var(--surface)" }}>
+                      <th style={{ padding: "7px 12px", fontSize: 10, color: "var(--muted)", textAlign: "left", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Player</th>
+                      <th style={{ padding: "7px 12px", fontSize: 10, color: "var(--muted)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Prediction</th>
+                      <th style={{ padding: "7px 12px", fontSize: 10, color: "var(--muted)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Result</th>
+                      <th style={{ padding: "7px 12px", fontSize: 10, color: "var(--muted)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(({ uid, u, p }) => {
+                      const reason = ptsReason(p.pts ?? 0);
+                      return (
+                        <tr key={uid} style={{ borderTop: "1px solid var(--border)" }}>
+                          <td style={{ padding: "7px 12px", fontSize: 13, fontWeight: 600, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>{u?.displayName || uid}</td>
+                          <td style={{ padding: "7px 12px", fontSize: 13, textAlign: "center", fontWeight: 700, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>{p.home} – {p.away}</td>
+                          <td style={{ padding: "7px 12px", fontSize: 11, textAlign: "center", color: reason.color, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, letterSpacing: 0.5 }}>{reason.label}</td>
+                          <td style={{ padding: "7px 12px", textAlign: "center" }}>
+                            <span className={`pts-badge${(p.pts ?? 0) === 0 ? " zero" : ""}`}>{p.pts ?? 0}pt{p.pts !== 1 ? "s" : ""}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             );
-          });
-        return allP.length > 0 ? (
-          <div key={`preds-${match.id}`} style={{ marginTop: -6, marginBottom: 8, lineHeight: 2, padding: "0 4px" }}>
-            {allP.reduce((a, b, i) => [a, <span key={i} style={{ color: "var(--border)" }}> · </span>, b])}
-          </div>
-        ) : null;
-      })}
+          })()}
+          {/* Admin: show picks even for incomplete/upcoming matches */}
+          {user?.isAdmin && !match.completed && (() => {
+            const rows = Object.entries(preds)
+              .filter(([, mp]) => mp[match.id])
+              .map(([uid, mp]) => ({ uid, u: users[uid], p: mp[match.id] }));
+            if (!rows.length) return null;
+            return (
+              <div style={{ marginTop: -6, marginBottom: 12, background: "rgba(26,77,143,0.06)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 12px", display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {rows.map(({ uid, u, p }) => (
+                  <span key={uid} style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'Barlow Condensed',sans-serif" }}>
+                    {u?.displayName || uid}: <strong style={{ color: "var(--text)" }}>{p.home}–{p.away}</strong>
+                  </span>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      ))}
     </div>
   );
 }
 
 // ── LEADERBOARD TAB ───────────────────────────────────────────────────────
-function LeaderboardTab({ users }) {
+function LeaderboardTab({ users, matches, preds }) {
+  const [expanded, setExpanded] = useState(null);
+
   const rows = Object.values(users).sort((a, b) => (b.totalPts || 0) - (a.totalPts || 0) || a.displayName.localeCompare(b.displayName));
   const cls = i => i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "";
   const medal = i => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
 
+  const completedMatches = matches.filter(m => m.completed);
+
   return (
-    <div className="card" style={{maxWidth: "100%"}}>
+    <div className="card" style={{ maxWidth: "100%" }}>
       <h2>Leaderboard</h2>
+      <div className="hint" style={{ marginBottom: 14 }}>Click a player row to see their per-game points breakdown.</div>
       {!rows.length ? <div style={{ color: "var(--muted)" }}>No data yet.</div> : (
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>#</th><th>Player</th><th>Match Pts</th><th>Bonus Pts</th><th>Carried Over</th><th>Total</th>
+                <th>#</th>
+                <th>Player</th>
+                <th>Match Pts</th>
+                <th>Bonus Pts</th>
+                <th>Carried Over</th>
+                <th>Total</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((u, i) => (
-                <tr key={u.id}>
-                  <td className={cls(i)}>{medal(i) || i + 1}</td>
-                  <td className={cls(i)}>{u.displayName}</td>
-                  <td>{u.matchPts || 0}</td>
-                  <td>{u.bonusPts || 0}</td>
-                  <td>{u.manualPts || 0}</td>
-                  <td><strong style={{ color: "var(--gold)" }}>{u.totalPts || 0}</strong></td>
-                </tr>
-              ))}
+              {rows.map((u, i) => {
+                const isOpen = expanded === u.id;
+                const userPreds = preds[u.id] || {};
+                return (
+                  <>
+                    <tr
+                      key={u.id}
+                      onClick={() => setExpanded(isOpen ? null : u.id)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <td className={cls(i)}>{medal(i) || i + 1}</td>
+                      <td className={cls(i)} style={{ fontWeight: 700 }}>{u.displayName}</td>
+                      <td>{u.matchPts || 0}</td>
+                      <td>{u.bonusPts || 0}</td>
+                      <td>{u.manualPts || 0}</td>
+                      <td><strong style={{ color: "var(--gold)" }}>{u.totalPts || 0}</strong></td>
+                      <td style={{ color: "var(--muted)", fontSize: 12 }}>{isOpen ? "▲" : "▼"}</td>
+                    </tr>
+                    {isOpen && (
+                      <tr key={`${u.id}-breakdown`}>
+                        <td colSpan={7} style={{ padding: 0, background: "var(--bg)" }}>
+                          {completedMatches.length === 0 ? (
+                            <div style={{ padding: "10px 16px", color: "var(--muted)", fontSize: 13 }}>No completed matches yet.</div>
+                          ) : (
+                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                              <thead>
+                                <tr style={{ background: "rgba(201,168,76,0.07)" }}>
+                                  <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "left", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Match</th>
+                                  <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Result</th>
+                                  <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Prediction</th>
+                                  <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Result</th>
+                                  <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Pts</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {completedMatches.map(m => {
+                                  const pred = userPreds[m.id];
+                                  const pts = pred ? (pred.pts ?? calcPts(Number(pred.home), Number(pred.away), Number(m.resultHome), Number(m.resultAway))) : null;
+                                  const reason = pred ? ptsReason(pts) : null;
+                                  return (
+                                    <tr key={m.id} style={{ borderTop: "1px solid var(--border)" }}>
+                                      <td style={{ padding: "7px 14px", fontSize: 12, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 600 }}>
+                                        {m.homeTeam} vs {m.awayTeam}
+                                      </td>
+                                      <td style={{ padding: "7px 14px", fontSize: 12, textAlign: "center", color: "var(--gold-bright)", fontWeight: 700, fontFamily: "'Barlow Condensed',sans-serif" }}>
+                                        {m.resultHome} – {m.resultAway}
+                                      </td>
+                                      <td style={{ padding: "7px 14px", fontSize: 12, textAlign: "center", color: pred ? "var(--text)" : "var(--muted)", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: pred ? 700 : 400 }}>
+                                        {pred ? `${pred.home} – ${pred.away}` : "No pick"}
+                                      </td>
+                                      <td style={{ padding: "7px 14px", fontSize: 11, textAlign: "center", color: reason ? reason.color : "var(--muted)", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700 }}>
+                                        {reason ? reason.label : "—"}
+                                      </td>
+                                      <td style={{ padding: "7px 14px", textAlign: "center" }}>
+                                        {pred
+                                          ? <span className={`pts-badge${pts === 0 ? " zero" : ""}`}>{pts}pt{pts !== 1 ? "s" : ""}</span>
+                                          : <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>
+                                        }
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -1613,7 +1744,7 @@ export default function App() {
             onSavePred={savePrediction} onSetScore={adminSetScore} onClearScore={adminClearScore}
           />
         )}
-        {activeTab === "leaderboard" && <LeaderboardTab users={users} />}
+        {activeTab === "leaderboard" && <LeaderboardTab users={users} matches={matches} preds={preds} />}
         {activeTab === "bonus" && (
           <BonusTab user={user} bonus={bonus} onSaveGroups={saveBonusGroups} onSaveOverall={saveBonusOverall} />
         )}

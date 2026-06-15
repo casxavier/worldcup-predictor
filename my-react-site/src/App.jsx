@@ -1499,24 +1499,56 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
             const [mH, setMH] = useState(m.resultHome ?? "");
             const [mA, setMA] = useState(m.resultAway ?? "");
             return (
-              <div key={m.id} className="admin-match-row">
-                <div style={{ flex: 1, minWidth: 160 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: "var(--heading)" }}>{m.homeTeam} vs {m.awayTeam}</div>
-                  <div className="hint">{fmtSGT(m.kickoffTime)} · {m.stage}{m.groupName ? " · " + m.groupName : ""}</div>
+              <div className="card" style={{ marginTop: 0 }}>
+        <h2>All Matches <span style={{ fontSize: 13, color: "var(--muted)", fontFamily: "'Audiowide',sans-serif", fontWeight: 400 }}>— click ✏️ to edit · 🗑 to delete</span></h2>
+        {!matches.length ? <div className="hint">No matches added yet.</div> : (
+          matches.map(m => {
+            const [mH, setMH] = useState(m.resultHome ?? "");
+            const [mA, setMA] = useState(m.resultAway ?? "");
+            const pickRows = Object.entries(preds)
+              .filter(([, mp]) => mp[m.id])
+              .map(([uid, mp]) => ({ uid, u: users[uid], p: mp[m.id] }))
+              .sort((a, b) => (b.p.pts ?? 0) - (a.p.pts ?? 0));
+            return (
+              <div key={m.id} style={{ marginBottom: 8 }}>
+                <div className="admin-match-row" style={pickRows.length ? { marginBottom: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: "none" } : {}}>
+                  <div style={{ flex: 1, minWidth: 160 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: "var(--heading)" }}>{m.homeTeam} vs {m.awayTeam}</div>
+                    <div className="hint">{fmtSGT(m.kickoffTime)} · {m.stage}{m.groupName ? " · " + m.groupName : ""}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <input type="number" min="0" value={mH} onChange={e => setMH(e.target.value)} placeholder="H" style={{ width: 56 }} />
+                    <span className="vs" style={{ fontSize: 13 }}>–</span>
+                    <input type="number" min="0" value={mA} onChange={e => setMA(e.target.value)} placeholder="A" style={{ width: 56 }} />
+                    <button className="btn-blue" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => saveResult(m.id, mH, mA)}>{m.completed ? "Update" : "Set"}</button>
+                    {m.completed && <button className="btn-ghost" style={{ padding: "6px 12px", fontSize: 12, color: "var(--red)", borderColor: "var(--red)" }} onClick={() => clearResult(m.id)}>Clear</button>}
+                  </div>
+                  <button className="btn-ghost" style={{ padding: "6px 12px", fontSize: 13 }} onClick={() => setEditMatch(m)} title="Edit match">✏️</button>
+                  <button className="btn-warn" style={{ padding: "6px 12px", fontSize: 13 }} onClick={() => setConfirmDelete(m.id)} title="Delete match">🗑</button>
+                  <span className={`pill ${m.completed ? "pill-done" : isLocked(m) ? "pill-locked" : "pill-open"}`}>
+                    {m.completed ? "Done" : isLocked(m) ? "Locked" : "Open"}
+                  </span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  <input type="number" min="0" value={mH} onChange={e => setMH(e.target.value)} placeholder="H" style={{ width: 56 }} />
-                  <span className="vs" style={{ fontSize: 13 }}>–</span>
-                  <input type="number" min="0" value={mA} onChange={e => setMA(e.target.value)} placeholder="A" style={{ width: 56 }} />
-                  <button className="btn-blue" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => saveResult(m.id, mH, mA)}>{m.completed ? "Update" : "Set"}</button>
-                  {m.completed && <button className="btn-ghost" style={{ padding: "6px 12px", fontSize: 12, color: "var(--red)", borderColor: "var(--red)" }} onClick={() => clearResult(m.id)}>Clear</button>}
-                </div>
-                <button className="btn-ghost" style={{ padding: "6px 12px", fontSize: 13 }} onClick={() => setEditMatch(m)} title="Edit match">✏️</button>
-                <button className="btn-warn" style={{ padding: "6px 12px", fontSize: 13 }} onClick={() => setConfirmDelete(m.id)} title="Delete match">🗑</button>
-                <span className={`pill ${m.completed ? "pill-done" : isLocked(m) ? "pill-locked" : "pill-open"}`}>
-                  {m.completed ? "Done" : isLocked(m) ? "Locked" : "Open"}
-                </span>
+                {pickRows.length > 0 && (
+                  <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderTop: "none", borderBottomLeftRadius: 8, borderBottomRightRadius: 8, padding: "8px 12px", display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {pickRows.map(({ uid, u, p }) => {
+                      const reason = m.completed ? ptsReason(p.pts ?? 0) : null;
+                      return (
+                        <span key={uid} style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'Barlow Condensed',sans-serif" }}>
+                          {u?.displayName || uid}: <strong style={{ color: "var(--text)" }}>{p.home}–{p.away}</strong>
+                          {m.completed && (
+                            <> · <span style={{ color: reason.color, fontWeight: 700 }}>{reason.label}</span> · <span className={`pts-badge${(p.pts ?? 0) === 0 ? " zero" : ""}`} style={{ fontSize: 10, padding: "1px 6px" }}>{p.pts ?? 0}pt{p.pts !== 1 ? "s" : ""}</span></>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
+            );
+          })
+        )}
+      </div>
             );
           })
         )}

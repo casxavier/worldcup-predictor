@@ -35,7 +35,14 @@ const DEFAULT_USERS = [
 ];
 
 const FIREBASE_CONFIG = {
-// IGNORE
+  apiKey: "AIzaSyBO3YHKEkvodyB3YUE35JescB3e10ja0uA",
+  authDomain: "worldcup-predictor-6fdb8.firebaseapp.com",
+  databaseURL: "https://worldcup-predictor-6fdb8-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "worldcup-predictor-6fdb8",
+  storageBucket: "worldcup-predictor-6fdb8.firebasestorage.app",
+  messagingSenderId: "255220213792",
+  appId: "1:255220213792:web:4d628451b116a95d703445",
+  measurementId: "G-6MGEQGYESZ",
 };
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
@@ -102,13 +109,18 @@ const CSS = `
 
 *{box-sizing:border-box;margin:0;padding:0}
 
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+
 body{
   background:var(--bg);
   color:var(--text);
   font-family:'Barlow',sans-serif;
   font-size:14px;
   min-height:100vh;
+  overflow-x:hidden;
 }
+
+img,svg{max-width:100%}
 
 /* ── TOPBAR ── */
 .topbar{
@@ -139,7 +151,7 @@ body{
 }
 
 /* LOGO */
-.logo{line-height:1;user-select:none}
+.logo{line-height:1;user-select:none;min-width:0}
 .logo-eyebrow{
   font-family:'Barlow Condensed',sans-serif;
   font-size:10px;font-weight:600;
@@ -175,7 +187,7 @@ body{
 .flag-ca-r{background:#FF0000}
 .flag-ca-w{background:#fff}
 
-.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 
 .user-badge{
   display:flex;align-items:center;gap:8px;
@@ -186,10 +198,12 @@ body{
   font-size:14px;font-weight:700;letter-spacing:1px;
   text-transform:uppercase;color:var(--gold);
   cursor:pointer;transition:all .2s;
+  <max-width:160></max-width:160>px;
 }
+.user-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .user-badge:hover{background:rgba(201,168,76,0.14);border-color:var(--gold)}
 
-.badge-dot{width:7px;height:7px;border-radius:50%;background:var(--malachite)}
+.badge-dot{width:7px;height:7px;border-radius:50%;background:var(--malachite);flex-shrink:0}
 .badge-dot.admin{background:var(--gold)}
 
 .btn-logout{
@@ -207,9 +221,13 @@ body{
 .tabs{
   max-width:1100px;margin:0 auto;
   padding:0 20px;
-  display:flex;gap:0;flex-wrap:wrap;
+  display:flex;gap:0;flex-wrap:nowrap;
   border-bottom:1px solid var(--border);
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
 }
+.tabs::-webkit-scrollbar{display:none}
 .tab{
   padding:12px 22px;
   border:none;border-bottom:3px solid transparent;
@@ -220,6 +238,8 @@ body{
   letter-spacing:1.5px;text-transform:uppercase;
   cursor:pointer;transition:.15s;
   margin-bottom:-1px;
+  flex-shrink:0;
+  white-space:nowrap;
 }
 .tab.active{color:var(--gold);border-bottom-color:var(--gold)}
 .tab:hover:not(.active){color:var(--white)}
@@ -232,6 +252,7 @@ body{
   border:1px solid var(--border);
   border-radius:var(--r);
   padding:20px;margin-bottom:16px;
+  min-width:0;
 }
 .card-accent{border-top:3px solid var(--gold)}
 
@@ -253,6 +274,7 @@ input,select,textarea{
   padding:9px 12px;font-size:14px;
   font-family:'Barlow',sans-serif;width:100%;
   transition:border-color .15s;
+  min-width:0;
 }
 input:focus,select:focus{
   outline:none;
@@ -267,7 +289,7 @@ label{
   margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;
   font-family:'Barlow Condensed',sans-serif;
 }
-.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group{display:flex;flex-direction:column;gap:5px;min-width:0}
 .hint{font-size:12px;color:var(--muted);margin-top:4px;font-family:'Barlow',sans-serif}
 .section-label{
   font-size:11px;font-weight:700;text-transform:uppercase;
@@ -302,6 +324,7 @@ button:disabled{opacity:.35;cursor:not-allowed;transform:none}
   border-radius:var(--r);
   padding:16px;margin-bottom:10px;
   transition:border-color .2s,transform .15s;
+  min-width:0;
 }
 .match-item:hover{
   border-left-color:var(--gold);
@@ -316,8 +339,9 @@ button:disabled{opacity:.35;cursor:not-allowed;transform:none}
   font-size:20px;font-weight:800;
   letter-spacing:1px;text-transform:uppercase;
   color:var(--heading);
+  overflow-wrap:break-word;
 }
-.match-meta{font-size:12px;color:var(--muted);margin-top:4px;font-family:'Barlow',sans-serif}
+.match-meta{font-size:12px;color:var(--muted);margin-top:4px;font-family:'Barlow',sans-serif;line-height:1.6}
 
 /* ── PILLS ── */
 .pill{
@@ -325,6 +349,7 @@ button:disabled{opacity:.35;cursor:not-allowed;transform:none}
   font-family:'Barlow Condensed',sans-serif;
   font-size:11px;font-weight:700;
   text-transform:uppercase;letter-spacing:1px;
+  white-space:nowrap;
 }
 .pill-open{background:rgba(26,140,90,0.2);color:var(--malachite-l);border:1px solid rgba(26,140,90,0.3)}
 .pill-locked{background:rgba(192,57,43,0.18);color:#E88080;border:1px solid rgba(192,57,43,0.3)}
@@ -344,6 +369,7 @@ button:disabled{opacity:.35;cursor:not-allowed;transform:none}
   border-left:3px solid var(--gold);
   border-radius:6px;font-size:13px;color:var(--gold-bright);
   font-family:'Barlow',sans-serif;
+  overflow-wrap:break-word;
 }
 .pts-badge{
   display:inline-block;padding:2px 10px;
@@ -452,6 +478,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   border:1px solid var(--border);border-top:3px solid var(--gold);
   border-radius:12px;padding:28px;
   width:100%;max-width:420px;
+  max-height:calc(100vh - 40px);overflow-y:auto;
 }
 .modal-box h3{
   font-family:'Barlow Condensed',sans-serif;
@@ -462,7 +489,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
 /* ── TOAST ── */
 .toast{
-  position:fixed;bottom:24px;right:24px;z-index:9999;
+  position:fixed;bottom:24px;right:24px;left:24px;z-index:9999;
   background:var(--card);border:1px solid var(--border);
   border-left:4px solid var(--border);
   border-radius:6px;padding:12px 18px;
@@ -470,7 +497,8 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   font-size:14px;font-weight:700;letter-spacing:.5px;
   text-transform:uppercase;color:var(--text);
   transform:translateY(80px);opacity:0;
-  transition:.3s;pointer-events:none;max-width:320px;
+  transition:.3s;pointer-events:none;
+  max-width:320px;margin:0 auto;
 }
 .toast.show{transform:translateY(0);opacity:1}
 .toast.success{border-left-color:var(--malachite);color:var(--malachite-l)}
@@ -491,7 +519,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 
 /* ── STATUS / ADMIN ── */
 .conn-indicator{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-family:'Barlow',sans-serif}
-.dot-live{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.dot-live{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
 .dot-live.live{background:var(--malachite-l)}
 .show-past-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
 .past-count{font-size:12px;color:var(--muted)}
@@ -520,6 +548,64 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 }
 .confirm-box p{color:var(--muted-l);font-size:13px;margin-bottom:20px;line-height:1.6}
 .confirm-actions{display:flex;gap:10px}
+
+/* ── MOBILE ── */
+@media(max-width:640px){
+  body{font-size:13px}
+
+  .topbar-inner{padding:12px 14px;gap:10px}
+  .topbar::before{font-size:34px;letter-spacing:3px}
+  .logo-main{font-size:22px;letter-spacing:1px}
+  .logo-sub{font-size:9px;letter-spacing:2px}
+  .topbar-right{width:100%;justify-content:space-between}
+  .user-badge{flex:1;justify-content:center;max-width:none;padding:8px 10px;font-size:12px}
+  .btn-logout{padding:8px 10px;font-size:11px}
+  .conn-indicator{display:none}
+
+  .tabs{padding:0 8px}
+  .tab{padding:10px 14px;font-size:12px;letter-spacing:1px}
+
+  .main{padding:12px}
+  .card{padding:14px;border-radius:8px}
+  .card h2{font-size:18px}
+
+  .match-item{padding:12px}
+  .match-teams{font-size:16px}
+  .match-meta{font-size:11px}
+
+  .score-row{gap:6px}
+  input[type=number]{width:54px;padding:8px 6px}
+  .vs{font-size:12px}
+
+  .match-edit-row{padding:8px 10px;gap:6px}
+  .match-edit-row input[type=number]{width:50px}
+
+  button{padding:9px 14px;font-size:12px}
+
+  .grid2{gap:12px}
+
+  .login-box{padding:22px}
+  .login-title{font-size:24px}
+  .user-grid{grid-template-columns:repeat(2,1fr)}
+
+  .modal-box{padding:18px}
+  .modal-box h3{font-size:18px}
+
+  .admin-match-row{padding:8px 10px}
+  .admin-match-row > div:first-child{flex-basis:100%}
+  .admin-match-row input[type=number]{width:48px;padding:8px 4px}
+
+  .toast{left:12px;right:12px;bottom:12px;max-width:none;font-size:12px}
+
+  table{min-width:0}
+  th,td{padding:8px 8px;font-size:12px}
+}
+
+@media(max-width:380px){
+  .user-grid{grid-template-columns:1fr}
+  .match-teams{font-size:15px}
+  input[type=number]{width:48px}
+}
 `;
 
 // ── TOAST HOOK ────────────────────────────────────────────────────────────
@@ -689,7 +775,7 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
   return (
     <div className={`match-item${match.completed ? " completed" : locked ? " locked" : ""}`} style={old ? { opacity: 0.55 } : {}}>
       <div className="match-header">
-        <div>
+        <div style={{ minWidth: 0 }}>
           <div className="match-teams">
             {match.homeTeam} <span style={{ color: "var(--muted)" }}>vs</span> {match.awayTeam}
           </div>
@@ -822,7 +908,7 @@ function LeaderboardTab({ users }) {
   const medal = i => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
 
   return (
-    <div className="card">
+    <div className="card" style={{maxWidth: "100%"}}>
       <h2>Leaderboard</h2>
       {!rows.length ? <div style={{ color: "var(--muted)" }}>No data yet.</div> : (
         <div className="table-wrap">

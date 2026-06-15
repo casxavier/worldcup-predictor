@@ -1149,7 +1149,7 @@ function BonusTab({ user, bonus, onSaveGroups, onSaveOverall }) {
         <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 18, color: "var(--heading)", marginBottom: 6 }}>
           Overall World Cup Winner <span style={{ color: "var(--gold)", fontSize: 14 }}>+20 pts</span>
         </div>
-        <div className="hint" style={{ marginBottom: 12 }}>Who will lift the trophy on 19 Jul 2026?</div>
+        <div className="hint" style={{ marginBottom: 12 }}>Who will lift the trophy on 20 Jul 2026?</div>
         {bonusLocked
           ? <div className="hint">Your pick: <strong style={{ color: "var(--text)" }}>{overallPick || "None"}</strong></div>
           : <>

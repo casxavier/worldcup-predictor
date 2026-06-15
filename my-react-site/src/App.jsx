@@ -1014,8 +1014,9 @@ function LeaderboardTab({ users, matches, preds }) {
                 const isOpen = expanded === u.id;
                 const userPreds = preds[u.id] || {};
                 return (
-                  <React.Fragment key={u.id}>
+                  <>
                     <tr
+                      key={u.id}
                       onClick={() => setExpanded(isOpen ? null : u.id)}
                       style={{ cursor: "pointer" }}
                     >
@@ -1077,7 +1078,7 @@ function LeaderboardTab({ users, matches, preds }) {
                         </td>
                       </tr>
                     )}
-                  </ React.Fragment>
+                  </>
                 );
               })}
             </tbody>

@@ -22,7 +22,8 @@ const ALL_COUNTRIES = Object.values(WC2026_GROUPS).flat().sort((a, b) => a.local
 
 const ADMIN_PASS = "admin2026";
 const BONUS_DEADLINE = "2026-06-15T23:59:00+08:00";
-const isBonusLocked = () => new Date() >= Date(BONUS_DEADLINE);
+// FIX 1: was Date(...) instead of new Date(...)
+const isBonusLocked = () => new Date() >= new Date(BONUS_DEADLINE);
 const DEFAULT_USERS = [
   { id: "user1", displayName: "Player 1" },
   { id: "user2", displayName: "Player 2" },
@@ -624,6 +625,13 @@ function useFirebase(toast) {
   const [settings, setSettings] = useState({ actualGroupWinners: {}, actualOverallWinner: "" });
   const unsubs = useRef([]);
 
+  // FIX 2: Keep live refs so recalcAll always uses freshest data
+  const usersRef = useRef({});
+  const matchesRef = useRef([]);
+  const predsRef = useRef({});
+  const bonusRef = useRef({});
+  const settingsRef = useRef({ actualGroupWinners: {}, actualOverallWinner: "" });
+
   const loadFirebase = useCallback(async () => {
     try {
       const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
@@ -648,23 +656,27 @@ function useFirebase(toast) {
         await batch.commit();
       }
 
-      // Listeners
+      // Listeners — keep refs in sync
       unsubs.current.push(
         onSnapshot(collection(firestore, "users"), snap => {
           const u = {};
           snap.forEach(d => { u[d.id] = { id: d.id, ...d.data() }; });
+          usersRef.current = u;
           setUsers(u);
         })
       );
       unsubs.current.push(
         onSnapshot(query(collection(firestore, "matches"), orderBy("kickoffTime")), snap => {
-          setMatches(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+          const m = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          matchesRef.current = m;
+          setMatches(m);
         })
       );
       unsubs.current.push(
         onSnapshot(collection(firestore, "predictions"), snap => {
           const p = {};
           snap.forEach(d => { p[d.id] = d.data(); });
+          predsRef.current = p;
           setPreds(p);
         })
       );
@@ -672,14 +684,17 @@ function useFirebase(toast) {
         onSnapshot(collection(firestore, "bonus"), snap => {
           const b = {};
           snap.forEach(d => { b[d.id] = d.data(); });
+          bonusRef.current = b;
           setBonus(b);
         })
       );
       unsubs.current.push(
         onSnapshot(doc(firestore, "settings", "app"), snap => {
-          setSettings(snap.exists()
+          const s = snap.exists()
             ? { actualGroupWinners: snap.data().actualGroupWinners || {}, actualOverallWinner: snap.data().actualOverallWinner || "" }
-            : { actualGroupWinners: {}, actualOverallWinner: "" });
+            : { actualGroupWinners: {}, actualOverallWinner: "" };
+          settingsRef.current = s;
+          setSettings(s);
         })
       );
 
@@ -697,20 +712,36 @@ function useFirebase(toast) {
     return () => unsubs.current.forEach(u => u());
   }, [loadFirebase]);
 
-  const recalcAll = useCallback(async (curUsers, curMatches, curPreds, curBonus, curSettings) => {
+  // FIX 3: recalcAll uses ref data by default (always fresh), but accepts
+  // override params for cases where we've just written and refs aren't updated yet.
+  const recalcAll = useCallback(async (overrideUsers, overrideMatches, overridePreds, overrideBonus, overrideSettings) => {
     if (!db) return;
-    const { firestore, doc, collection, writeBatch, serverTimestamp, setDoc } = db;
+    const { firestore, doc, writeBatch, setDoc } = db;
+
+    const curUsers    = overrideUsers    ?? usersRef.current;
+    const curMatches  = overrideMatches  ?? matchesRef.current;
+    const curPreds    = overridePreds    ?? predsRef.current;
+    const curBonus    = overrideBonus    ?? bonusRef.current;
+    const curSettings = overrideSettings ?? settingsRef.current;
+
     const batch = writeBatch(firestore);
+
+    // FIX 4: Also write pts back to each prediction document so match cards show correct pts
+    const predUpdates = {}; // uid -> { matchId -> pts }
 
     for (const uid of Object.keys(curUsers)) {
       let matchPts = 0, bonusPts = 0;
       const userPreds = curPreds[uid] || {};
+      predUpdates[uid] = { ...userPreds };
 
       for (const match of curMatches) {
         if (!match.completed) continue;
         const pred = userPreds[match.id];
         if (!pred) continue;
-        matchPts += calcPts(Number(pred.home), Number(pred.away), Number(match.resultHome), Number(match.resultAway));
+        const pts = calcPts(Number(pred.home), Number(pred.away), Number(match.resultHome), Number(match.resultAway));
+        matchPts += pts;
+        // Write pts back into prediction entry
+        predUpdates[uid][match.id] = { ...pred, pts };
       }
 
       const bp = curBonus[uid] || {};
@@ -726,7 +757,11 @@ function useFirebase(toast) {
       batch.set(doc(firestore, "users", uid), {
         matchPts, bonusPts, manualPts, totalPts: matchPts + bonusPts + manualPts,
       }, { merge: true });
+
+      // Write updated prediction pts back
+      batch.set(doc(firestore, "predictions", uid), predUpdates[uid]);
     }
+
     await batch.commit();
   }, [db]);
 
@@ -819,7 +854,7 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
         <div className="result-notice">
           ⚽ Final: <strong>{match.homeTeam} {match.resultHome} – {match.resultAway} {match.awayTeam}</strong>
           {userPred && !user?.isAdmin && (
-            <> · Your points: <span className={`pts-badge${userPred.pts === 0 ? " zero" : ""}`}>{userPred.pts ?? 0}pt{userPred.pts !== 1 ? "s" : ""}</span></>
+            <> · Your points: <span className={`pts-badge${(userPred.pts ?? 0) === 0 ? " zero" : ""}`}>{userPred.pts ?? 0}pt{userPred.pts !== 1 ? "s" : ""}</span></>
           )}
         </div>
       )}
@@ -878,7 +913,7 @@ function MatchesTab({ user, matches, preds, users, onSavePred, onSetScore, onCle
             return (
               <span key={uid} style={{ fontSize: 12, color: "var(--muted)" }}>
                 {u?.displayName || uid}: <strong style={{ color: "var(--text)" }}>{p.home}–{p.away}</strong>
-                {match.completed && <span className={`pts-badge${p.pts === 0 ? " zero" : ""}`} style={{ marginLeft: 4 }}>{p.pts}pt{p.pts !== 1 ? "s" : ""}</span>}
+                {match.completed && <span className={`pts-badge${(p.pts ?? 0) === 0 ? " zero" : ""}`} style={{ marginLeft: 4 }}>{p.pts ?? 0}pt{p.pts !== 1 ? "s" : ""}</span>}
               </span>
             );
           });
@@ -948,7 +983,7 @@ function BonusTab({ user, bonus, onSaveGroups, onSaveOverall }) {
     );
   }
 
-const bonusLocked = isBonusLocked();
+  const bonusLocked = isBonusLocked();
 
   return (
     <div className="card">
@@ -1114,7 +1149,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
 
   const addMatch = async () => {
     if (!db || !newMatch.home || !newMatch.away || !newMatch.kickoff) { toast("Fill in home team, away team and kickoff time.", "error"); return; }
-    const { firestore, doc, setDoc, serverTimestamp } = db;
+    const { firestore, doc, setDoc } = db;
     const id = `m${Date.now()}`;
     await setDoc(doc(firestore, "matches", id), {
       id, homeTeam: newMatch.home, awayTeam: newMatch.away,
@@ -1129,12 +1164,13 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
 
   const saveResult = async (mid, h, a) => {
     if (!db || !mid || h === "" || a === "") { toast("Select a match and enter scores.", "error"); return; }
-    const { firestore, doc, updateDoc, serverTimestamp } = db;
+    const { firestore, doc, updateDoc } = db;
     await updateDoc(doc(firestore, "matches", mid), {
       resultHome: Math.max(0, Number(h)), resultAway: Math.max(0, Number(a)),
       completed: true,
     });
-    await recalcAll(users, matches, preds, bonus, settings);
+    // Pass null so recalcAll uses the freshest ref data (listener will have updated by now)
+    await recalcAll(null, null, null, null, null);
     toast("Score saved & points recalculated! 🏆", "success");
   };
 
@@ -1142,7 +1178,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
     if (!db || !mid) return;
     const { firestore, doc, updateDoc } = db;
     await updateDoc(doc(firestore, "matches", mid), { resultHome: null, resultAway: null, completed: false });
-    await recalcAll(users, matches, preds, bonus, settings);
+    await recalcAll(null, null, null, null, null);
     toast("Result cleared.", "success");
   };
 
@@ -1153,7 +1189,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
       displayName: adminUsers[uid]?.name || users[uid].displayName,
       manualPts: Number(adminUsers[uid]?.manual || 0),
     });
-    await recalcAll(users, matches, preds, bonus, settings);
+    await recalcAll(null, null, null, null, null);
     toast("User updated.", "success");
   };
 
@@ -1172,7 +1208,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
 
   const deleteMatch = async () => {
     if (!db || !confirmDelete) return;
-    const { firestore, doc, deleteDoc, writeBatch, setDoc } = db;
+    const { firestore, doc, deleteDoc, writeBatch } = db;
     await deleteDoc(doc(firestore, "matches", confirmDelete));
     const batch = writeBatch(firestore);
     Object.keys(preds).forEach(uid => {
@@ -1183,7 +1219,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
       }
     });
     await batch.commit();
-    await recalcAll(users, matches.filter(m => m.id !== confirmDelete), preds, bonus, settings);
+    await recalcAll(null, null, null, null, null);
     toast("Match deleted.", "info");
     setConfirmDelete(null);
     setEditMatch(null);
@@ -1193,7 +1229,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
     if (!db) return;
     const { firestore, doc, setDoc } = db;
     await setDoc(doc(firestore, "settings", "app"), { actualGroupWinners: groupWinners }, { merge: true });
-    await recalcAll(users, matches, preds, bonus, { ...settings, actualGroupWinners: groupWinners });
+    await recalcAll(null, null, null, null, null);
     toast("Actual group winners saved.", "success");
   };
 
@@ -1201,7 +1237,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
     if (!db) return;
     const { firestore, doc, setDoc } = db;
     await setDoc(doc(firestore, "settings", "app"), { actualOverallWinner: overallWinner }, { merge: true });
-    await recalcAll(users, matches, preds, bonus, { ...settings, actualOverallWinner: overallWinner });
+    await recalcAll(null, null, null, null, null);
     toast("Actual overall winner saved.", "success");
   };
 
@@ -1469,7 +1505,8 @@ export default function App() {
       predData.pts = calcPts(predData.home, predData.away, Number(match.resultHome), Number(match.resultAway));
     }
     await setDoc(doc(firestore, "predictions", user.id), { [matchId]: predData }, { merge: true });
-    await recalcAll(users, matches, preds, bonus, settings);
+    // FIX 5: pass null so recalcAll reads fresh ref data after the write above
+    await recalcAll(null, null, null, null, null);
     toast.show("Prediction saved! ⚽", "success");
   };
 
@@ -1479,7 +1516,7 @@ export default function App() {
     await updateDoc(doc(firestore, "matches", matchId), {
       resultHome: Math.max(0, Number(h)), resultAway: Math.max(0, Number(a)), completed: true,
     });
-    await recalcAll(users, matches, preds, bonus, settings);
+    await recalcAll(null, null, null, null, null);
     toast.show("Score saved & points recalculated! 🏆", "success");
   };
 
@@ -1487,7 +1524,7 @@ export default function App() {
     if (!db) return;
     const { firestore, doc, updateDoc } = db;
     await updateDoc(doc(firestore, "matches", matchId), { resultHome: null, resultAway: null, completed: false });
-    await recalcAll(users, matches, preds, bonus, settings);
+    await recalcAll(null, null, null, null, null);
     toast.show("Result cleared.", "success");
   };
 
@@ -1505,7 +1542,7 @@ export default function App() {
     const { firestore, doc, setDoc } = db;
     const bp = bonus[user.id] || { groupWinners: {}, overallWinner: "" };
     await setDoc(doc(firestore, "bonus", user.id), { groupWinners: groupPicks, overallWinner: bp.overallWinner || "" }, { merge: true });
-    await recalcAll(users, matches, preds, { ...bonus, [user.id]: { ...bp, groupWinners: groupPicks } }, settings);
+    await recalcAll(null, null, null, null, null);
     toast.show("Group picks saved! ✅", "success");
   };
 
@@ -1515,7 +1552,7 @@ export default function App() {
     const { firestore, doc, setDoc } = db;
     const bp = bonus[user.id] || { groupWinners: {}, overallWinner: "" };
     await setDoc(doc(firestore, "bonus", user.id), { overallWinner: pick, groupWinners: bp.groupWinners || {} }, { merge: true });
-    await recalcAll(users, matches, preds, { ...bonus, [user.id]: { ...bp, overallWinner: pick } }, settings);
+    await recalcAll(null, null, null, null, null);
     toast.show(`Overall winner pick saved: ${pick} 🏆`, "success");
   };
 

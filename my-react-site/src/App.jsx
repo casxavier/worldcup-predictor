@@ -22,7 +22,6 @@ const ALL_COUNTRIES = Object.values(WC2026_GROUPS).flat().sort((a, b) => a.local
 
 const ADMIN_PASS = "admin2026";
 const BONUS_DEADLINE = "2026-06-15T23:59:00+08:00";
-// FIX 1: was Date(...) instead of new Date(...)
 const isBonusLocked = () => new Date() >= new Date(BONUS_DEADLINE);
 const DEFAULT_USERS = [
   { id: "user1", displayName: "Player 1" },
@@ -636,7 +635,6 @@ function useFirebase(toast) {
   const [settings, setSettings] = useState({ actualGroupWinners: {}, actualOverallWinner: "" });
   const unsubs = useRef([]);
 
-  // FIX 2: Keep live refs so recalcAll always uses freshest data
   const usersRef = useRef({});
   const matchesRef = useRef([]);
   const predsRef = useRef({});
@@ -723,8 +721,6 @@ function useFirebase(toast) {
     return () => unsubs.current.forEach(u => u());
   }, [loadFirebase]);
 
-  // FIX 3: recalcAll uses ref data by default (always fresh), but accepts
-  // override params for cases where we've just written and refs aren't updated yet.
   const recalcAll = useCallback(async (overrideUsers, overrideMatches, overridePreds, overrideBonus, overrideSettings) => {
     if (!db) return;
     const { firestore, doc, writeBatch, setDoc } = db;
@@ -737,7 +733,6 @@ function useFirebase(toast) {
 
     const batch = writeBatch(firestore);
 
-    // FIX 4: Also write pts back to each prediction document so match cards show correct pts
     const predUpdates = {}; // uid -> { matchId -> pts }
 
     for (const uid of Object.keys(curUsers)) {
@@ -1732,7 +1727,6 @@ export default function App() {
       predData.pts = calcPts(predData.home, predData.away, Number(match.resultHome), Number(match.resultAway));
     }
     await setDoc(doc(firestore, "predictions", user.id), { [matchId]: predData }, { merge: true });
-    // FIX 5: pass null so recalcAll reads fresh ref data after the write above
     await recalcAll(null, null, null, null, null);
     toast.show("Prediction saved! ⚽", "success");
   };

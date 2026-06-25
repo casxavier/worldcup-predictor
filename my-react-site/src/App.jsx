@@ -45,6 +45,37 @@ const FIREBASE_CONFIG = {
   measurementId: "G-6MGEQGYESZ",
 };
 
+// ── KNOCKOUT STAGE HELPERS ────────────────────────────────────────────────
+const KNOCKOUT_STAGES = ["R32", "R16", "QF", "SF", "Final"];
+
+function isKnockout(stage) {
+  return KNOCKOUT_STAGES.includes(stage);
+}
+
+// Points for knockout stages:
+// R32:   correct winner=2, correct GD=3, exact score=4
+// R16:   correct winner=3, correct GD=4, exact score=5
+// QF:    correct winner=4, correct GD=5, exact score=6
+// SF:    correct winner=5, correct GD=6, exact score=7
+// Final: correct winner=6, correct GD=7, exact score=8
+function knockoutBasePts(stage) {
+  const bases = { R32: 2, R16: 3, QF: 4, SF: 5, Final: 6 };
+  return bases[stage] ?? 2;
+}
+
+function calcKnockoutPts(ph, pa, ah, aa, stage) {
+  ph = Number(ph); pa = Number(pa); ah = Number(ah); aa = Number(aa);
+  const base = knockoutBasePts(stage);
+  // Must have a winner (no draws in knockout — but we still support draw scorelines for 90min score)
+  // Exact score
+  if (ph === ah && pa === aa) return base + 2;
+  // Correct goal difference (and same winner)
+  if ((ph - pa) === (ah - aa) && outcome(ph, pa) === outcome(ah, aa)) return base + 1;
+  // Correct winner
+  if (outcome(ph, pa) === outcome(ah, aa)) return base;
+  return 0;
+}
+
 // ── HELPERS ───────────────────────────────────────────────────────────────
 function fmtSGT(iso) {
   if (!iso) return "—";
@@ -71,7 +102,8 @@ function isOldMatch(match) {
 
 function outcome(h, a) { return h > a ? "home" : a > h ? "away" : "draw"; }
 
-function calcPts(ph, pa, ah, aa) {
+function calcPts(ph, pa, ah, aa, stage) {
+  if (isKnockout(stage)) return calcKnockoutPts(ph, pa, ah, aa, stage);
   if (ph === ah && pa === aa) return 3;
   if ((ph - pa) === (ah - aa)) return 2;
   if (outcome(ph, pa) === outcome(ah, aa)) return 1;
@@ -82,6 +114,21 @@ function loadSession() {
   try { return JSON.parse(localStorage.getItem("wc_session")); } catch { return null; }
 }
 function saveSession(s) { localStorage.setItem("wc_session", JSON.stringify(s)); }
+
+// ── PTS REASON LABEL ─────────────────────────────────────────────────────
+function ptsReason(pts, stage) {
+  if (isKnockout(stage)) {
+    const base = knockoutBasePts(stage);
+    if (pts === base + 2) return { label: "Exact Score", color: "var(--gold-bright)" };
+    if (pts === base + 1) return { label: "Correct Goal Diff", color: "var(--malachite-l)" };
+    if (pts === base)     return { label: "Correct Winner", color: "#7EB8FF" };
+    return { label: "No Points", color: "var(--muted)" };
+  }
+  if (pts === 3) return { label: "Exact Score", color: "var(--gold-bright)" };
+  if (pts === 2) return { label: "Correct Diff", color: "var(--malachite-l)" };
+  if (pts === 1) return { label: "Correct Winner", color: "#7EB8FF" };
+  return { label: "No Points", color: "var(--muted)" };
+}
 
 // ── CSS ───────────────────────────────────────────────────────────────────
 const CSS = `
@@ -104,6 +151,8 @@ const CSS = `
   --text:       #E8E8E8;
   --heading:    #FFFFFF;
   --accent:     #C9A84C;
+  --knockout:   #1A8C5A;
+  --knockout-l: #1A8C5A;
   --r:          10px;
 }
 
@@ -192,7 +241,7 @@ img,svg{max-width:100%}
 
 .topbar-right{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;justify-content:flex-end;flex-shrink:0}
 
-.conn-indicator{display:none} /* hidden on mobile by default, shown on wider screens */
+.conn-indicator{display:none}
 
 .user-badge{
   display:flex;align-items:center;gap:6px;
@@ -325,6 +374,7 @@ button{
 .btn-red{background:var(--red);color:#fff}
 .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
 .btn-warn{background:transparent;border:1px solid var(--red);color:var(--red-bright)}
+.btn-knockout{background:var(--knockout);color:#fff}
 button:hover{opacity:.9;transform:translateY(-1px)}
 button:disabled{opacity:.35;cursor:not-allowed;transform:none}
 
@@ -344,7 +394,73 @@ button:disabled{opacity:.35;cursor:not-allowed;transform:none}
 }
 .match-item.completed{border-left-color:var(--malachite)}
 .match-item.locked{border-left-color:var(--red)}
+.match-item.knockout{border-left-color:var(--knockout)}
+.match-item.knockout.completed{border-left-color:var(--knockout-l)}
+.match-item.knockout:hover{border-left-color:var(--knockout-l)}
 
+/* ── KNOCKOUT BADGE ── */
+.knockout-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:3px;
+  background:rgba(123,79,212,0.18);
+  border:1px solid rgba(123,79,212,0.4);
+  color:var(--knockout-l);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:10px;
+}
+
+/* ── WINNER SELECT ── */
+.winner-select-wrap{
+  margin-top:12px;
+  padding:14px;
+  background:rgba(123,79,212,0.07);
+  border:1px solid rgba(123,79,212,0.25);
+  border-radius:8px;
+}
+.winner-select-label{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.5px;
+  color:var(--knockout-l);
+  margin-bottom:8px;display:block;
+}
+.winner-select-inner{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.winner-team-btn{
+  padding:8px 16px;border-radius:6px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;
+  cursor:pointer;transition:.15s;
+  white-space:nowrap;
+}
+.winner-team-btn.selected{
+  background:rgba(123,79,212,0.25);
+  border-color:var(--knockout-l);
+  color:var(--knockout-l);
+}
+.winner-team-btn:hover:not(.selected){
+  border-color:rgba(123,79,212,0.5);
+  color:var(--knockout-l);
+}
+.score-row-ko{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:10px;
+}
+.score-label-ko{
+  font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:1px;
+  color:var(--muted-l);
+  font-family:'Barlow Condensed',sans-serif;
+  white-space:nowrap;
+}
+
+/* ── MATCH HEADER ── */
 .match-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .match-teams{
   font-family:'Barlow Condensed',sans-serif;
@@ -366,6 +482,7 @@ button:disabled{opacity:.35;cursor:not-allowed;transform:none}
 .pill-open{background:rgba(26,140,90,0.2);color:var(--malachite-l);border:1px solid rgba(26,140,90,0.3)}
 .pill-locked{background:rgba(192,57,43,0.18);color:#E88080;border:1px solid rgba(192,57,43,0.3)}
 .pill-done{background:rgba(201,168,76,0.15);color:var(--gold-bright);border:1px solid rgba(201,168,76,0.3)}
+.pill-knockout{background:rgba(123,79,212,0.2);color:var(--knockout-l);border:1px solid rgba(123,79,212,0.4)}
 
 .score-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .vs{
@@ -383,6 +500,12 @@ button:disabled{opacity:.35;cursor:not-allowed;transform:none}
   font-family:'Barlow',sans-serif;
   overflow-wrap:break-word;
 }
+.result-notice.knockout{
+  background:rgba(123,79,212,0.08);
+  border-color:rgba(123,79,212,0.25);
+  border-left-color:var(--knockout-l);
+  color:var(--knockout-l);
+}
 .pts-badge{
   display:inline-block;padding:2px 10px;
   border-radius:3px;font-weight:700;font-size:12px;
@@ -390,6 +513,7 @@ button:disabled{opacity:.35;cursor:not-allowed;transform:none}
   font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;
 }
 .pts-badge.zero{background:#2a2a2a;color:var(--muted)}
+.pts-badge.knockout{background:var(--knockout);color:#fff}
 
 .match-edit-row{
   margin-top:10px;padding:10px 12px;
@@ -541,6 +665,19 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 }
 .admin-match-row:hover{border-color:rgba(201,168,76,0.3)}
 
+/* ── KNOCKOUT POINTS INFO ── */
+.ko-pts-info{
+  background:rgba(123,79,212,0.07);
+  border:1px solid rgba(123,79,212,0.2);
+  border-radius:6px;padding:10px 14px;
+  margin-top:10px;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:12px;color:var(--knockout-l);
+  display:flex;gap:14px;flex-wrap:wrap;
+  letter-spacing:.3px;
+}
+.ko-pts-info span{white-space:nowrap}
+
 /* ── CONFIRM DIALOG ── */
 .confirm-overlay{
   position:fixed;inset:0;z-index:2000;
@@ -652,7 +789,6 @@ function useFirebase(toast) {
       const app = initializeApp(FIREBASE_CONFIG);
       const firestore = getFirestore(app);
 
-      // Seed users
       const snap = await getDoc(doc(firestore, "users", "user1"));
       if (!snap.exists()) {
         const batch = writeBatch(firestore);
@@ -665,7 +801,6 @@ function useFirebase(toast) {
         await batch.commit();
       }
 
-      // Listeners — keep refs in sync
       unsubs.current.push(
         onSnapshot(collection(firestore, "users"), snap => {
           const u = {};
@@ -723,7 +858,7 @@ function useFirebase(toast) {
 
   const recalcAll = useCallback(async (overrideUsers, overrideMatches, overridePreds, overrideBonus, overrideSettings) => {
     if (!db) return;
-    const { firestore, doc, writeBatch, setDoc } = db;
+    const { firestore, doc, writeBatch } = db;
 
     const curUsers    = overrideUsers    ?? usersRef.current;
     const curMatches  = overrideMatches  ?? matchesRef.current;
@@ -733,7 +868,7 @@ function useFirebase(toast) {
 
     const batch = writeBatch(firestore);
 
-    const predUpdates = {}; // uid -> { matchId -> pts }
+    const predUpdates = {};
 
     for (const uid of Object.keys(curUsers)) {
       let matchPts = 0, bonusPts = 0;
@@ -744,9 +879,8 @@ function useFirebase(toast) {
         if (!match.completed) continue;
         const pred = userPreds[match.id];
         if (!pred) continue;
-        const pts = calcPts(Number(pred.home), Number(pred.away), Number(match.resultHome), Number(match.resultAway));
+        const pts = calcPts(Number(pred.home), Number(pred.away), Number(match.resultHome), Number(match.resultAway), match.stage);
         matchPts += pts;
-        // Write pts back into prediction entry
         predUpdates[uid][match.id] = { ...pred, pts };
       }
 
@@ -764,7 +898,6 @@ function useFirebase(toast) {
         matchPts, bonusPts, manualPts, totalPts: matchPts + bonusPts + manualPts,
       }, { merge: true });
 
-      // Write updated prediction pts back
       batch.set(doc(firestore, "predictions", uid), predUpdates[uid]);
     }
 
@@ -774,10 +907,26 @@ function useFirebase(toast) {
   return { db, connected, users, matches, preds, bonus, settings, recalcAll };
 }
 
+// ── KNOCKOUT PTS INFO BAR ────────────────────────────────────────────────
+function KnockoutPtsInfo({ stage }) {
+  const base = knockoutBasePts(stage);
+  return (
+    <div className="ko-pts-info">
+      <span>⚽ Correct Winner: <strong>{base} pts</strong></span>
+      <span>📐 Correct Goal Diff: <strong>{base + 1} pts</strong></span>
+      <span>🎯 Exact Score: <strong>{base + 2} pts</strong></span>
+    </div>
+  );
+}
+
 // ── MATCH ITEM ────────────────────────────────────────────────────────────
 function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore }) {
+  const ko = isKnockout(match.stage);
+
   const [predH, setPredH] = useState(preds?.[match.id]?.home ?? "");
   const [predA, setPredA] = useState(preds?.[match.id]?.away ?? "");
+  // For knockout: selectedWinner tracks which team button is chosen
+  // We derive it from predH/predA after user picks score too
   const [scoreH, setScoreH] = useState(match.resultHome ?? "");
   const [scoreA, setScoreA] = useState(match.resultAway ?? "");
 
@@ -797,27 +946,63 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
 
   const stageLabel = match.stage === "group"
     ? `GROUP STAGE${match.groupName ? " · " + match.groupName : ""}`
+    : match.stage === "R32" ? "ROUND OF 32"
+    : match.stage === "R16" ? "ROUND OF 16"
+    : match.stage === "QF"  ? "QUARTER-FINAL"
+    : match.stage === "SF"  ? "SEMI-FINAL"
+    : match.stage === "Final" ? "FINAL"
     : match.stage;
 
   const pill = match.completed
     ? <span className="pill pill-done">Result In</span>
-    : locked ? <span className="pill pill-locked">Locked</span>
-      : <span className="pill pill-open">Open</span>;
+    : locked
+      ? <span className="pill pill-locked">Locked</span>
+      : ko
+        ? <span className="pill pill-knockout">KO Open</span>
+        : <span className="pill pill-open">Open</span>;
+
+  // For knockout predictions: derive winner from score inputs
+  const koWinner = ko && predH !== "" && predA !== "" && Number(predH) !== Number(predA)
+    ? (Number(predH) > Number(predA) ? match.homeTeam : match.awayTeam)
+    : null;
+
+  const handleKoTeamBtn = (team) => {
+    // If team is home, set home score higher; away, set away higher
+    // If scores already reflect this winner, just ensure
+    const h = Number(predH) || 0;
+    const a = Number(predA) || 0;
+    if (team === match.homeTeam) {
+      if (h <= a) { setPredH(String(a + 1)); }
+    } else {
+      if (a <= h) { setPredA(String(h + 1)); }
+    }
+  };
+
+  const matchItemClass = `match-item${match.completed ? " completed" : locked ? " locked" : ""}${ko ? " knockout" : ""}`;
 
   return (
-    <div className={`match-item${match.completed ? " completed" : locked ? " locked" : ""}`} style={old ? { opacity: 0.55 } : {}}>
+    <div className={matchItemClass} style={old ? { opacity: 0.55 } : {}}>
       <div className="match-header">
         <div style={{ minWidth: 0 }}>
+          {ko && (
+            <div className="knockout-badge">
+              🏆 Knockout · {stageLabel}
+            </div>
+          )}
           <div className="match-teams">
             {match.homeTeam} <span style={{ color: "var(--muted)" }}>vs</span> {match.awayTeam}
           </div>
           <div className="match-meta">
             ⏰ Kickoff: {fmtSGT(match.kickoffTime)} &nbsp;·&nbsp;
-            🔒 Deadline: {fmtSGT(match.deadline || match.kickoffTime)} &nbsp;·&nbsp; {stageLabel}
+            🔒 Deadline: {fmtSGT(match.deadline || match.kickoffTime)}
+            {!ko && <>&nbsp;·&nbsp; {stageLabel}</>}
           </div>
         </div>
         <div>{pill}</div>
       </div>
+
+      {/* Knockout scoring info for players */}
+      {ko && !user?.isAdmin && <KnockoutPtsInfo stage={match.stage} />}
 
       {!user && <div className="hint" style={{ marginTop: 10 }}>Log in to predict.</div>}
 
@@ -825,7 +1010,9 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
         <div>
           <div className="hint" style={{ marginTop: 10, color: "var(--gold)" }}>Admin view</div>
           <div className="match-edit-row">
-            <span style={{ fontSize: 11, color: "var(--blue)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px" }}>Score:</span>
+            <span style={{ fontSize: 11, color: "var(--blue)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px" }}>
+              {ko ? "90min Score:" : "Score:"}
+            </span>
             <input type="number" min="0" value={scoreH} onChange={e => setScoreH(e.target.value)} placeholder="H" style={{ width: 60 }} />
             <span className="vs" style={{ fontSize: 13 }}>–</span>
             <input type="number" min="0" value={scoreA} onChange={e => setScoreA(e.target.value)} placeholder="A" style={{ width: 60 }} />
@@ -842,44 +1029,110 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
       {user && !user.isAdmin && (
         locked ? (
           <div className="hint" style={{ marginTop: 10 }}>
-            {userPred
-              ? <>Your pick: <strong style={{ color: "var(--text)" }}>{userPred.home} – {userPred.away}</strong></>
-              : "No prediction submitted before deadline."}
+            {userPred ? (
+              <>
+                Your pick: <strong style={{ color: "var(--text)" }}>{userPred.home} – {userPred.away}</strong>
+                {ko && userPred.home !== "" && userPred.away !== "" && Number(userPred.home) !== Number(userPred.away) && (
+                  <> · Winner: <strong style={{ color: "var(--knockout-l)" }}>
+                    {Number(userPred.home) > Number(userPred.away) ? match.homeTeam : match.awayTeam}
+                  </strong></>
+                )}
+              </>
+            ) : "No prediction submitted before deadline."}
+          </div>
+        ) : ko ? (
+          // ── KNOCKOUT PREDICTION UI ──
+          <div className="winner-select-wrap">
+            <span className="winner-select-label">Pick the outright winner &amp; 90-min score</span>
+            {/* Winner buttons */}
+            <div className="winner-select-inner">
+              <button
+                className={`winner-team-btn${koWinner === match.homeTeam ? " selected" : ""}`}
+                onClick={() => handleKoTeamBtn(match.homeTeam)}
+              >
+                {match.homeTeam}
+              </button>
+              <span style={{ color: "var(--muted)", fontSize: 12, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700 }}>OR</span>
+              <button
+                className={`winner-team-btn${koWinner === match.awayTeam ? " selected" : ""}`}
+                onClick={() => handleKoTeamBtn(match.awayTeam)}
+              >
+                {match.awayTeam}
+              </button>
+            </div>
+            {/* Score inputs */}
+            <div className="score-row-ko">
+              <span className="score-label-ko">90-min score:</span>
+              <input
+                type="number" min="0" value={predH}
+                onChange={e => setPredH(e.target.value)}
+                placeholder="0"
+                style={{ width: 64 }}
+              />
+              <span className="vs">–</span>
+              <input
+                type="number" min="0" value={predA}
+                onChange={e => setPredA(e.target.value)}
+                placeholder="0"
+                style={{ width: 64 }}
+              />
+              {koWinner && (
+                <span style={{
+                  fontSize: 12, color: "var(--knockout-l)", fontFamily: "'Barlow Condensed',sans-serif",
+                  fontWeight: 700, letterSpacing: ".5px"
+                }}>
+                  → {koWinner} wins
+                </span>
+              )}
+            </div>
+            {Number(predH) === Number(predA) && predH !== "" && predA !== "" && (
+              <div className="hint" style={{ marginTop: 6, color: "var(--red-bright)" }}>
+                ⚠ Knockout matches must have a winner — scores can't be equal.
+              </div>
+            )}
+            <button
+              className="btn-knockout"
+              style={{ marginTop: 12, width: "100%" }}
+              onClick={() => onSavePred(match.id, predH, predA, match.stage)}
+              disabled={predH === "" || predA === "" || Number(predH) === Number(predA)}
+            >
+              Save Knockout Pick
+            </button>
           </div>
         ) : (
+          // ── GROUP STAGE PREDICTION UI ──
           <div className="score-row" style={{ marginTop: 12 }}>
             <input type="number" min="0" value={predH} onChange={e => setPredH(e.target.value)} placeholder="0" />
             <span className="vs">–</span>
             <input type="number" min="0" value={predA} onChange={e => setPredA(e.target.value)} placeholder="0" />
-            <button className="btn-green" onClick={() => onSavePred(match.id, predH, predA)}>Save Pick</button>
+            <button className="btn-green" onClick={() => onSavePred(match.id, predH, predA, match.stage)}>Save Pick</button>
           </div>
         )
       )}
 
       {match.completed && (
-        <div className="result-notice">
-          ⚽ Final: <strong>{match.homeTeam} {match.resultHome} – {match.resultAway} {match.awayTeam}</strong>
+        <div className={`result-notice${ko ? " knockout" : ""}`}>
+          ⚽ {ko ? "90-min score" : "Final"}: <strong>
+            {match.homeTeam} {match.resultHome} – {match.resultAway} {match.awayTeam}
+          </strong>
+          {ko && (
+            <> · Winner: <strong>
+              {Number(match.resultHome) > Number(match.resultAway) ? match.homeTeam : Number(match.resultAway) > Number(match.resultHome) ? match.awayTeam : "Draw (AET/Pens)"}
+            </strong></>
+          )}
           {userPred && !user?.isAdmin && (() => {
             const pts = userPred.pts ?? 0;
-            const reason = ptsReason(pts);
+            const reason = ptsReason(pts, match.stage);
             return (
               <> · Your pick: <strong style={{ color: "var(--text)" }}>{userPred.home}–{userPred.away}</strong>
               {" "}· <span style={{ color: reason.color, fontWeight: 700, fontSize: 12 }}>{reason.label}</span>
-              {" "}· <span className={`pts-badge${pts === 0 ? " zero" : ""}`}>{pts}pt{pts !== 1 ? "s" : ""}</span></>
+              {" "}· <span className={`pts-badge${pts === 0 ? " zero" : ko ? " knockout" : ""}`}>{pts}pt{pts !== 1 ? "s" : ""}</span></>
             );
           })()}
         </div>
       )}
     </div>
   );
-}
-
-// ── PTS REASON LABEL ─────────────────────────────────────────────────────
-function ptsReason(pts) {
-  if (pts === 3) return { label: "Exact Score", color: "var(--gold-bright)" };
-  if (pts === 2) return { label: "Correct Diff", color: "var(--malachite-l)" };
-  if (pts === 1) return { label: "Correct Winner", color: "#7EB8FF" };
-  return { label: "No Points", color: "var(--muted)" };
 }
 
 // ── MATCHES TAB ───────────────────────────────────────────────────────────
@@ -924,6 +1177,7 @@ function MatchesTab({ user, matches, preds, users, onSavePred, onSetScore, onCle
           />
           {/* Admin: per-player picks table under each match */}
           {user?.isAdmin && match.completed && (() => {
+            const ko = isKnockout(match.stage);
             const rows = Object.entries(preds)
               .filter(([, mp]) => mp[match.id])
               .map(([uid, mp]) => ({ uid, u: users[uid], p: mp[match.id] }))
@@ -934,22 +1188,31 @@ function MatchesTab({ user, matches, preds, users, onSavePred, onSetScore, onCle
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 0 }}>
                   <thead>
                     <tr style={{ background: "var(--surface)" }}>
-                      <th style={{ padding: "7px 12px", fontSize: 10, color: "var(--muted)", textAlign: "left", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Player</th>
-                      <th style={{ padding: "7px 12px", fontSize: 10, color: "var(--muted)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Prediction</th>
-                      <th style={{ padding: "7px 12px", fontSize: 10, color: "var(--muted)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Result</th>
-                      <th style={{ padding: "7px 12px", fontSize: 10, color: "var(--muted)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Pts</th>
+                      <th style={{ padding: "7px 12px", fontSize: 10, color: ko ? "var(--knockout-l)" : "var(--muted)", textAlign: "left", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Player</th>
+                      <th style={{ padding: "7px 12px", fontSize: 10, color: ko ? "var(--knockout-l)" : "var(--muted)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>{ko ? "Predicted Winner" : "Prediction"}</th>
+                      <th style={{ padding: "7px 12px", fontSize: 10, color: ko ? "var(--knockout-l)" : "var(--muted)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>{ko ? "90-min Score" : "Result"}</th>
+                      <th style={{ padding: "7px 12px", fontSize: 10, color: ko ? "var(--knockout-l)" : "var(--muted)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Outcome</th>
+                      <th style={{ padding: "7px 12px", fontSize: 10, color: ko ? "var(--knockout-l)" : "var(--muted)", textAlign: "center", letterSpacing: 1, textTransform: "uppercase", fontFamily: "'Barlow Condensed',sans-serif" }}>Pts</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map(({ uid, u, p }) => {
-                      const reason = ptsReason(p.pts ?? 0);
+                      const reason = ptsReason(p.pts ?? 0, match.stage);
+                      const predWinner = ko && p.home !== undefined && p.away !== undefined && Number(p.home) !== Number(p.away)
+                        ? (Number(p.home) > Number(p.away) ? match.homeTeam : match.awayTeam)
+                        : null;
                       return (
                         <tr key={uid} style={{ borderTop: "1px solid var(--border)" }}>
                           <td style={{ padding: "7px 12px", fontSize: 13, fontWeight: 600, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>{u?.displayName || uid}</td>
-                          <td style={{ padding: "7px 12px", fontSize: 13, textAlign: "center", fontWeight: 700, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>{p.home} – {p.away}</td>
+                          <td style={{ padding: "7px 12px", fontSize: 13, textAlign: "center", fontWeight: 700, color: ko ? "var(--knockout-l)" : "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>
+                            {ko ? (predWinner || "—") : `${p.home} – ${p.away}`}
+                          </td>
+                          <td style={{ padding: "7px 12px", fontSize: 13, textAlign: "center", fontWeight: 700, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>
+                            {p.home} – {p.away}
+                          </td>
                           <td style={{ padding: "7px 12px", fontSize: 11, textAlign: "center", color: reason.color, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, letterSpacing: 0.5 }}>{reason.label}</td>
                           <td style={{ padding: "7px 12px", textAlign: "center" }}>
-                            <span className={`pts-badge${(p.pts ?? 0) === 0 ? " zero" : ""}`}>{p.pts ?? 0}pt{p.pts !== 1 ? "s" : ""}</span>
+                            <span className={`pts-badge${(p.pts ?? 0) === 0 ? " zero" : ko ? " knockout" : ""}`}>{p.pts ?? 0}pt{p.pts !== 1 ? "s" : ""}</span>
                           </td>
                         </tr>
                       );
@@ -959,19 +1222,26 @@ function MatchesTab({ user, matches, preds, users, onSavePred, onSetScore, onCle
               </div>
             );
           })()}
-          {/* Admin: show picks even for incomplete/upcoming matches */}
           {user?.isAdmin && !match.completed && (() => {
+            const ko = isKnockout(match.stage);
             const rows = Object.entries(preds)
               .filter(([, mp]) => mp[match.id])
               .map(([uid, mp]) => ({ uid, u: users[uid], p: mp[match.id] }));
             if (!rows.length) return null;
             return (
-              <div style={{ marginTop: -6, marginBottom: 12, background: "rgba(26,77,143,0.06)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 12px", display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {rows.map(({ uid, u, p }) => (
-                  <span key={uid} style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'Barlow Condensed',sans-serif" }}>
-                    {u?.displayName || uid}: <strong style={{ color: "var(--text)" }}>{p.home}–{p.away}</strong>
-                  </span>
-                ))}
+              <div style={{ marginTop: -6, marginBottom: 12, background: ko ? "rgba(123,79,212,0.06)" : "rgba(26,77,143,0.06)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 12px", display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {rows.map(({ uid, u, p }) => {
+                  const predWinner = ko && p.home !== undefined && p.away !== undefined && Number(p.home) !== Number(p.away)
+                    ? (Number(p.home) > Number(p.away) ? match.homeTeam : match.awayTeam)
+                    : null;
+                  return (
+                    <span key={uid} style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'Barlow Condensed',sans-serif" }}>
+                      {u?.displayName || uid}: <strong style={{ color: ko ? "var(--knockout-l)" : "var(--text)" }}>
+                        {p.home}–{p.away}{ko && predWinner ? ` (${predWinner})` : ""}
+                      </strong>
+                    </span>
+                  );
+                })}
               </div>
             );
           })()}
@@ -1038,21 +1308,32 @@ function LeaderboardTab({ users, matches, preds }) {
                               <thead>
                                 <tr style={{ background: "rgba(201,168,76,0.07)" }}>
                                   <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "left", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Match</th>
+                                  <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Stage</th>
                                   <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Result</th>
                                   <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Prediction</th>
-                                  <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Result</th>
+                                  <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Outcome</th>
                                   <th style={{ padding: "6px 14px", fontSize: 10, color: "var(--gold)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Pts</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {completedMatches.map(m => {
+                                  const ko = isKnockout(m.stage);
                                   const pred = userPreds[m.id];
-                                  const pts = pred ? (pred.pts ?? calcPts(Number(pred.home), Number(pred.away), Number(m.resultHome), Number(m.resultAway))) : null;
-                                  const reason = pred ? ptsReason(pts) : null;
+                                  const pts = pred ? (pred.pts ?? calcPts(Number(pred.home), Number(pred.away), Number(m.resultHome), Number(m.resultAway), m.stage)) : null;
+                                  const reason = pred ? ptsReason(pts, m.stage) : null;
+                                  const stageLabel = m.stage === "group" ? "Group" : m.stage === "R32" ? "R32" : m.stage === "R16" ? "R16" : m.stage === "QF" ? "QF" : m.stage === "SF" ? "SF" : m.stage;
                                   return (
                                     <tr key={m.id} style={{ borderTop: "1px solid var(--border)" }}>
                                       <td style={{ padding: "7px 14px", fontSize: 12, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 600 }}>
                                         {m.homeTeam} vs {m.awayTeam}
+                                      </td>
+                                      <td style={{ padding: "7px 14px", fontSize: 11, textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif" }}>
+                                        <span style={{
+                                          padding: "2px 7px", borderRadius: 3,
+                                          background: ko ? "rgba(123,79,212,0.18)" : "rgba(201,168,76,0.1)",
+                                          color: ko ? "var(--knockout-l)" : "var(--gold)",
+                                          fontWeight: 700, fontSize: 10, letterSpacing: 0.5
+                                        }}>{stageLabel}</span>
                                       </td>
                                       <td style={{ padding: "7px 14px", fontSize: 12, textAlign: "center", color: "var(--gold-bright)", fontWeight: 700, fontFamily: "'Barlow Condensed',sans-serif" }}>
                                         {m.resultHome} – {m.resultAway}
@@ -1065,7 +1346,7 @@ function LeaderboardTab({ users, matches, preds }) {
                                       </td>
                                       <td style={{ padding: "7px 14px", textAlign: "center" }}>
                                         {pred
-                                          ? <span className={`pts-badge${pts === 0 ? " zero" : ""}`}>{pts}pt{pts !== 1 ? "s" : ""}</span>
+                                          ? <span className={`pts-badge${pts === 0 ? " zero" : ko ? " knockout" : ""}`}>{pts}pt{pts !== 1 ? "s" : ""}</span>
                                           : <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>
                                         }
                                       </td>
@@ -1198,6 +1479,7 @@ function EditMatchModal({ match, onSave, onClose, onDelete }) {
               <label>Stage</label>
               <select value={stage} onChange={e => setStage(e.target.value)}>
                 <option value="group">Group Stage</option>
+                <option value="R32">Round of 32</option>
                 <option value="R16">Round of 16</option>
                 <option value="QF">Quarter-Final</option>
                 <option value="SF">Semi-Final</option>
@@ -1290,14 +1572,17 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
 
   const saveResult = async (mid, h, a) => {
     if (!db || !mid || h === "" || a === "") { toast("Select a match and enter scores.", "error"); return; }
+    const match = matches.find(m => m.id === mid);
+    if (isKnockout(match?.stage) && Number(h) === Number(a)) {
+      toast("Knockout scores can't be equal — must have a winner.", "error"); return;
+    }
     const { firestore, doc, updateDoc } = db;
     await updateDoc(doc(firestore, "matches", mid), {
       resultHome: Math.max(0, Number(h)), resultAway: Math.max(0, Number(a)),
       completed: true,
     });
-    // Pass null so recalcAll uses the freshest ref data (listener will have updated by now)
     await recalcAll(null, null, null, null, null);
-    toast("Score saved & points recalculated! 🏆", "success");
+    toast("Score saved & points recalculated!", "success");
   };
 
   const clearResult = async (mid) => {
@@ -1368,6 +1653,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
   };
 
   const selectedMatch = matches.find(m => m.id === resultSel);
+  const selectedKO = selectedMatch && isKnockout(selectedMatch.stage);
 
   return (
     <>
@@ -1403,6 +1689,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
               <label>Stage</label>
               <select value={newMatch.stage} onChange={e => setNewMatch(p => ({ ...p, stage: e.target.value }))}>
                 <option value="group">Group Stage</option>
+                <option value="R32">Round of 32</option>
                 <option value="R16">Round of 16</option>
                 <option value="QF">Quarter-Final</option>
                 <option value="SF">Semi-Final</option>
@@ -1431,8 +1718,14 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
             {selectedMatch?.completed && (
               <div className="hint">Current: <strong style={{ color: "var(--gold)" }}>{selectedMatch.resultHome} – {selectedMatch.resultAway}</strong></div>
             )}
+            {selectedKO && (
+              <div className="ko-pts-info" style={{ marginTop: 0 }}>
+                <span>⚠ Knockout — 90-min score only</span>
+                <span>No draws allowed</span>
+              </div>
+            )}
             <div className="form-group">
-              <label>Score</label>
+              <label>{selectedKO ? "90-Min Score" : "Score"}</label>
               <div className="score-row">
                 <input type="number" min="0" value={resultH} onChange={e => setResultH(e.target.value)} placeholder="0" />
                 <span className="vs">–</span>
@@ -1513,6 +1806,7 @@ function AdminMatchRow({ m, preds, users, onSaveResult, onClearResult, onEdit, o
   const [mH, setMH] = useState(m.resultHome ?? "");
   const [mA, setMA] = useState(m.resultAway ?? "");
   const [open, setOpen] = useState(false);
+  const ko = isKnockout(m.stage);
 
   useEffect(() => {
     setMH(m.resultHome ?? "");
@@ -1526,22 +1820,34 @@ function AdminMatchRow({ m, preds, users, onSaveResult, onClearResult, onEdit, o
 
   const hasPreds = playerRows.length > 0;
 
+  const stageLabel = m.stage === "group" ? "GS" : m.stage === "R32" ? "R32" : m.stage === "R16" ? "R16" : m.stage === "QF" ? "QF" : m.stage === "SF" ? "SF" : m.stage;
+
   return (
     <div style={{ marginBottom: 8 }}>
-      {/* Main row */}
       <div
         className="admin-match-row"
-        style={{ cursor: hasPreds ? "pointer" : "default", borderRadius: open ? "8px 8px 0 0" : 8, marginBottom: 0 }}
+        style={{ cursor: hasPreds ? "pointer" : "default", borderRadius: open ? "8px 8px 0 0" : 8, marginBottom: 0, borderLeftColor: ko ? "rgba(123,79,212,0.5)" : undefined, borderLeftWidth: ko ? 3 : undefined }}
         onClick={() => hasPreds && setOpen(o => !o)}
       >
         <div style={{ flex: 1, minWidth: 160 }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: "var(--heading)" }}>{m.homeTeam} vs {m.awayTeam}</div>
-          <div className="hint">{fmtSGT(m.kickoffTime)} · {m.stage}{m.groupName ? " · " + m.groupName : ""}
+          <div style={{ fontWeight: 700, fontSize: 13, color: "var(--heading)", display: "flex", alignItems: "center", gap: 6 }}>
+            {m.homeTeam} vs {m.awayTeam}
+            <span style={{
+              padding: "1px 6px", borderRadius: 2, fontSize: 10, fontWeight: 700,
+              background: ko ? "rgba(123,79,212,0.2)" : "rgba(201,168,76,0.1)",
+              color: ko ? "var(--knockout-l)" : "var(--gold)",
+              fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 0.5
+            }}>{stageLabel}</span>
+          </div>
+          <div className="hint">{fmtSGT(m.kickoffTime)}
             {hasPreds && <span style={{ color: "var(--gold)", marginLeft: 8 }}>{playerRows.length} pick{playerRows.length !== 1 ? "s" : ""} {open ? "▲" : "▼"}</span>}
             {!hasPreds && <span style={{ color: "var(--muted)", marginLeft: 8 }}>no picks yet</span>}
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }} onClick={e => e.stopPropagation()}>
+          <span style={{ fontSize: 10, color: ko ? "var(--knockout-l)" : "var(--muted)", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700 }}>
+            {ko ? "90min:" : "Score:"}
+          </span>
           <input type="number" min="0" value={mH} onChange={e => setMH(e.target.value)} placeholder="H" style={{ width: 56 }} />
           <span className="vs" style={{ fontSize: 13 }}>–</span>
           <input type="number" min="0" value={mA} onChange={e => setMA(e.target.value)} placeholder="A" style={{ width: 56 }} />
@@ -1552,35 +1858,45 @@ function AdminMatchRow({ m, preds, users, onSaveResult, onClearResult, onEdit, o
           <button className="btn-ghost" style={{ padding: "6px 10px", fontSize: 13 }} onClick={onEdit} title="Edit match">✏️</button>
           <button className="btn-warn" style={{ padding: "6px 10px", fontSize: 13 }} onClick={onDelete} title="Delete match">🗑</button>
         </div>
-        <span className={`pill ${m.completed ? "pill-done" : isLocked(m) ? "pill-locked" : "pill-open"}`}>
-          {m.completed ? "Done" : isLocked(m) ? "Locked" : "Open"}
+        <span className={`pill ${m.completed ? "pill-done" : isLocked(m) ? "pill-locked" : ko ? "pill-knockout" : "pill-open"}`}>
+          {m.completed ? "Done" : isLocked(m) ? "Locked" : ko ? "KO" : "Open"}
         </span>
       </div>
 
-      {/* Expanded predictions table */}
       {open && hasPreds && (
         <div style={{ border: "1px solid var(--border)", borderTop: "none", borderRadius: "0 0 8px 8px", overflow: "hidden", background: "var(--bg)" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "rgba(201,168,76,0.08)" }}>
-                <th style={thStyle}>Player</th>
-                <th style={{ ...thStyle, textAlign: "center" }}>Prediction</th>
+              <tr style={{ background: ko ? "rgba(123,79,212,0.08)" : "rgba(201,168,76,0.08)" }}>
+                <th style={{ ...thStyle, color: ko ? "var(--knockout-l)" : "var(--gold)" }}>Player</th>
+                {ko && <th style={{ ...thStyle, textAlign: "center", color: "var(--knockout-l)" }}>Predicted Winner</th>}
+                <th style={{ ...thStyle, textAlign: "center", color: ko ? "var(--knockout-l)" : "var(--gold)" }}>
+                  {ko ? "90-min Score" : "Prediction"}
+                </th>
                 {m.completed && <>
-                  <th style={{ ...thStyle, textAlign: "center" }}>Result</th>
-                  <th style={{ ...thStyle, textAlign: "center" }}>Outcome</th>
-                  <th style={{ ...thStyle, textAlign: "center" }}>Pts</th>
+                  <th style={{ ...thStyle, textAlign: "center", color: ko ? "var(--knockout-l)" : "var(--gold)" }}>Result</th>
+                  <th style={{ ...thStyle, textAlign: "center", color: ko ? "var(--knockout-l)" : "var(--gold)" }}>Outcome</th>
+                  <th style={{ ...thStyle, textAlign: "center", color: ko ? "var(--knockout-l)" : "var(--gold)" }}>Pts</th>
                 </>}
               </tr>
             </thead>
             <tbody>
               {playerRows.map(({ uid, u, p }) => {
                 const pts = m.completed
-                  ? (p.pts ?? calcPts(Number(p.home), Number(p.away), Number(m.resultHome), Number(m.resultAway)))
+                  ? (p.pts ?? calcPts(Number(p.home), Number(p.away), Number(m.resultHome), Number(m.resultAway), m.stage))
                   : null;
-                const reason = m.completed ? ptsReason(pts) : null;
+                const reason = m.completed ? ptsReason(pts, m.stage) : null;
+                const predWinner = ko && p.home !== undefined && p.away !== undefined && Number(p.home) !== Number(p.away)
+                  ? (Number(p.home) > Number(p.away) ? m.homeTeam : m.awayTeam)
+                  : null;
                 return (
                   <tr key={uid} style={{ borderTop: "1px solid var(--border)" }}>
                     <td style={tdStyle}>{u?.displayName || uid}</td>
+                    {ko && (
+                      <td style={{ ...tdStyle, textAlign: "center", fontWeight: 700, color: "var(--knockout-l)" }}>
+                        {predWinner || "—"}
+                      </td>
+                    )}
                     <td style={{ ...tdStyle, textAlign: "center", fontWeight: 700, color: "var(--text)" }}>
                       {p.home} – {p.away}
                     </td>
@@ -1592,7 +1908,7 @@ function AdminMatchRow({ m, preds, users, onSaveResult, onClearResult, onEdit, o
                         {reason.label}
                       </td>
                       <td style={{ ...tdStyle, textAlign: "center" }}>
-                        <span className={`pts-badge${pts === 0 ? " zero" : ""}`}>{pts}pt{pts !== 1 ? "s" : ""}</span>
+                        <span className={`pts-badge${pts === 0 ? " zero" : ko ? " knockout" : ""}`}>{pts}pt{pts !== 1 ? "s" : ""}</span>
                       </td>
                     </>}
                   </tr>
@@ -1716,29 +2032,35 @@ export default function App() {
     setActiveTab("matches");
   };
 
-  const savePrediction = async (matchId, home, away) => {
-    if (!user || user.isAdmin || !db) return;
-    const match = matches.find(m => m.id === matchId);
-    if (!match || isLocked(match)) { toast.show("Deadline passed!", "error"); return; }
-    if (home === "" || away === "") { toast.show("Enter both scores.", "error"); return; }
-    const { firestore, doc, setDoc } = db;
-    const predData = { home: Math.max(0, Number(home)), away: Math.max(0, Number(away)), pts: 0 };
-    if (match.completed) {
-      predData.pts = calcPts(predData.home, predData.away, Number(match.resultHome), Number(match.resultAway));
-    }
-    await setDoc(doc(firestore, "predictions", user.id), { [matchId]: predData }, { merge: true });
-    await recalcAll(null, null, null, null, null);
-    toast.show("Prediction saved! ⚽", "success");
-  };
-
+ const savePrediction = async (matchId, home, away, stage) => {
+  if (!user || user.isAdmin || !db) return;
+  const match = matches.find(m => m.id === matchId);
+  if (!match || isLocked(match)) { toast.show("Deadline passed!", "error"); return; }
+  if (home === "" || away === "") { toast.show("Enter both scores.", "error"); return; }
+  if (isKnockout(stage) && Number(home) === Number(away)) {
+    toast.show("Knockout prediction must have a winner — scores can't be equal.", "error"); return;
+  }
+  const { firestore, doc, setDoc } = db;
+  const predData = { home: Math.max(0, Number(home)), away: Math.max(0, Number(away)), pts: 0 };
+  // If match already has a result, calculate pts immediately
+  if (match.completed) {
+    predData.pts = calcPts(predData.home, predData.away, Number(match.resultHome), Number(match.resultAway), stage);
+  }
+  await setDoc(doc(firestore, "predictions", user.id), { [matchId]: predData }, { merge: true });
+  toast.show(isKnockout(stage) ? "Knockout pick saved!" : "Prediction saved!", "success");
+};
   const adminSetScore = async (matchId, h, a) => {
     if (!db) return;
+    const match = matches.find(m => m.id === matchId);
+    if (isKnockout(match?.stage) && Number(h) === Number(a)) {
+      toast.show("Knockout scores can't be equal — must have a winner.", "error"); return;
+    }
     const { firestore, doc, updateDoc } = db;
     await updateDoc(doc(firestore, "matches", matchId), {
       resultHome: Math.max(0, Number(h)), resultAway: Math.max(0, Number(a)), completed: true,
     });
     await recalcAll(null, null, null, null, null);
-    toast.show("Score saved & points recalculated! 🏆", "success");
+    toast.show("Score saved & points recalculated!", "success");
   };
 
   const adminClearScore = async (matchId) => {
@@ -1847,13 +2169,85 @@ export default function App() {
         {activeTab === "rules" && (
           <div className="card card-accent">
             <h2>How to Play</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, lineHeight: 1.8 }}>
-              <div>⚽ <strong>Correct exact score</strong> → <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}>3 pts</span></div>
-              <div>🎯 <strong>Correct goal difference</strong>→ <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}>2 pts</span></div>
-              <div>✅ <strong>Correct winner / draw</strong> → <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}>1 pt</span></div>
-              <div>🏆 <strong>Correct group stage winner</strong> → <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}>5 pts</span> per group</div>
-              <div>🥇 <strong>Correct overall World Cup winner</strong> → <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}>20 pts</span></div>
-              <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 6, borderTop: "1px solid var(--border)", paddingTop: 10 }}>Predictions lock at the deadline set by admin. All times shown in Singapore Time (GMT+8).</div>
+
+            {/* Group Stage */}
+            <div style={{ marginBottom: 20 }}>
+              <div className="section-label" style={{ marginBottom: 12 }}>Group Stage</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, lineHeight: 1.8 }}>
+                <div>⚽ <strong>Correct exact score</strong> → <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}>3 pts</span></div>
+                <div>🎯 <strong>Correct goal difference</strong> → <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}>2 pts</span></div>
+                <div>✅ <strong>Correct winner / draw</strong> → <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}>1 pt</span></div>
+              </div>
+            </div>
+
+            {/* Knockout Stages */}
+            <div style={{ marginBottom: 20 }}>
+              <div className="section-label" style={{ marginBottom: 12, color: "var(--knockout-l)", borderBottomColor: "rgba(123,79,212,0.3)" }}>
+                Knockout Stages — Predict the Outright Winner &amp; 90-min Score
+              </div>
+              <div style={{ color: "var(--muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.7 }}>
+                From the Round of 32 onwards, predict who wins <strong style={{ color: "var(--text)" }}>and</strong> the 90-minute score.
+                Points increase each round by 1.
+              </div>
+
+              {/* Knockout points table */}
+              <div style={{ overflowX: "auto", borderRadius: 8, border: "1px solid var(--border)" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>
+                  <thead>
+                    <tr style={{ background: "rgba(123,79,212,0.1)" }}>
+                      <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--knockout-l)", textAlign: "left", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Stage</th>
+                      <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--knockout-l)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Correct Winner</th>
+                      <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--knockout-l)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Correct Goal Diff</th>
+                      <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--knockout-l)", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>Exact Score</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { label: "Round of 32", stage: "R32" },
+                      { label: "Round of 16", stage: "R16" },
+                      { label: "Quarter-Final", stage: "QF" },
+                      { label: "Semi-Final", stage: "SF" },
+                      { label: "Final", stage: "Final" },
+                    ].map(({ label, stage }) => {
+                      const base = knockoutBasePts(stage);
+                      return (
+                        <tr key={stage} style={{ borderTop: "1px solid var(--border)" }}>
+                          <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>{label}</td>
+                          <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                            <span className="pts-badge knockout">{base} pts</span>
+                          </td>
+                          <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                            <span className="pts-badge knockout">{base + 1} pts</span>
+                          </td>
+                          <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                            <span className="pts-badge knockout">{base + 2} pts</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={{ marginTop: 12, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
+                💡 <strong style={{ color: "var(--text)" }}>Example:</strong> Round of 32, Japan vs Tunisia — you predict Japan wins 3–1.
+                The actual result is Japan 2–0. You get <strong style={{ color: "var(--knockout-l)" }}>2 pts</strong> (correct winner).
+                If you predicted 2–0 exactly, you'd get <strong style={{ color: "var(--knockout-l)" }}>4 pts</strong>.
+                Knockout scores reflect 90-minute time only.
+              </div>
+            </div>
+
+            {/* Bonus */}
+            <div>
+              <div className="section-label" style={{ marginBottom: 12 }}>Bonus Picks</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, lineHeight: 1.8 }}>
+                <div>🏆 <strong>Correct group stage winner</strong> → <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}>5 pts</span> per group</div>
+                <div>🥇 <strong>Correct overall World Cup winner</strong> → <span style={{ color: "var(--gold-bright)", fontWeight: 700 }}>20 pts</span></div>
+              </div>
+            </div>
+
+            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+              Predictions lock at the deadline set by admin. All times shown in Singapore Time (GMT+8).
             </div>
           </div>
         )}

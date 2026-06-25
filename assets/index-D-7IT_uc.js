@@ -26,8 +26,8 @@ Error generating stack: `+e.message+`
   --text:       #E8E8E8;
   --heading:    #FFFFFF;
   --accent:     #C9A84C;
-  --knockout:   #7B4FD4;
-  --knockout-l: #A07EE8;
+  --knockout:   #1A8C5A;
+  --knockout-l: #1A8C5A;
   --r:          10px;
 }
 

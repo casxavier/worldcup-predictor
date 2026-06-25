@@ -856,56 +856,67 @@ function useFirebase(toast) {
     return () => unsubs.current.forEach(u => u());
   }, [loadFirebase]);
 
-  const recalcAll = useCallback(async (overrideUsers, overrideMatches, overridePreds, overrideBonus, overrideSettings) => {
-    if (!db) return;
-    const { firestore, doc, writeBatch } = db;
+const recalcAll = useCallback(async (overrideUsers, overrideMatches, overridePreds, overrideBonus, overrideSettings) => {
+  if (!db) return;
+  const { firestore, doc, writeBatch } = db;
 
-    const curUsers    = overrideUsers    ?? usersRef.current;
-    const curMatches  = overrideMatches  ?? matchesRef.current;
-    const curPreds    = overridePreds    ?? predsRef.current;
-    const curBonus    = overrideBonus    ?? bonusRef.current;
-    const curSettings = overrideSettings ?? settingsRef.current;
+  const curUsers    = overrideUsers    ?? usersRef.current;
+  const curMatches  = overrideMatches  ?? matchesRef.current;
+  const curPreds    = overridePreds    ?? predsRef.current;
+  const curBonus    = overrideBonus    ?? bonusRef.current;
+  const curSettings = overrideSettings ?? settingsRef.current;
 
-    const batch = writeBatch(firestore);
+  const batch = writeBatch(firestore);
 
-    const predUpdates = {};
+  for (const uid of Object.keys(curUsers)) {
+    let matchPts = 0, bonusPts = 0;
+    const userPreds = curPreds[uid] || {};
+    const updatedPreds = { ...userPreds };
+    let predsChanged = false;
 
-    for (const uid of Object.keys(curUsers)) {
-      let matchPts = 0, bonusPts = 0;
-      const userPreds = curPreds[uid] || {};
-      predUpdates[uid] = { ...userPreds };
-
-      for (const match of curMatches) {
-        if (!match.completed) continue;
-        const pred = userPreds[match.id];
-        if (!pred) continue;
-        const pts = calcPts(Number(pred.home), Number(pred.away), Number(match.resultHome), Number(match.resultAway), match.stage);
-        matchPts += pts;
-        predUpdates[uid][match.id] = { ...pred, pts };
+    for (const match of curMatches) {
+      if (!match.completed) continue;
+      const pred = userPreds[match.id];
+      if (!pred) continue;
+      const newPts = calcPts(Number(pred.home), Number(pred.away), Number(match.resultHome), Number(match.resultAway), match.stage);
+      matchPts += newPts;
+      // Only flag as changed if pts value actually differs
+      if ((pred.pts ?? 0) !== newPts) {
+        updatedPreds[match.id] = { ...pred, pts: newPts };
+        predsChanged = true;
       }
-
-      const bp = curBonus[uid] || {};
-      const agw = curSettings.actualGroupWinners || {};
-      GROUP_NAMES.forEach(g => {
-        if (agw[g] && bp.groupWinners?.[g] &&
-          agw[g].trim().toLowerCase() === bp.groupWinners[g].trim().toLowerCase()) bonusPts += 5;
-      });
-      if (curSettings.actualOverallWinner && bp.overallWinner &&
-        curSettings.actualOverallWinner.trim().toLowerCase() === bp.overallWinner.trim().toLowerCase()) bonusPts += 20;
-
-      const manualPts = Number(curUsers[uid].manualPts || 0);
-      batch.set(doc(firestore, "users", uid), {
-        matchPts, bonusPts, manualPts, totalPts: matchPts + bonusPts + manualPts,
-      }, { merge: true });
-
-      batch.set(doc(firestore, "predictions", uid), predUpdates[uid]);
     }
 
-    await batch.commit();
-  }, [db]);
+    const bp = curBonus[uid] || {};
+    const agw = curSettings.actualGroupWinners || {};
+    GROUP_NAMES.forEach(g => {
+      if (agw[g] && bp.groupWinners?.[g] &&
+        agw[g].trim().toLowerCase() === bp.groupWinners[g].trim().toLowerCase()) bonusPts += 5;
+    });
+    if (curSettings.actualOverallWinner && bp.overallWinner &&
+      curSettings.actualOverallWinner.trim().toLowerCase() === bp.overallWinner.trim().toLowerCase()) bonusPts += 20;
 
-  return { db, connected, users, matches, preds, bonus, settings, recalcAll };
-}
+    const manualPts = Number(curUsers[uid].manualPts || 0);
+    const newTotal = matchPts + bonusPts + manualPts;
+    const totalChanged = (curUsers[uid].matchPts ?? 0) !== matchPts
+      || (curUsers[uid].bonusPts ?? 0) !== bonusPts
+      || (curUsers[uid].totalPts ?? 0) !== newTotal;
+
+    // Only write user doc if totals changed
+    if (totalChanged) {
+      batch.set(doc(firestore, "users", uid), {
+        matchPts, bonusPts, manualPts, totalPts: newTotal,
+      }, { merge: true });
+    }
+
+    // Only write predictions doc if any pts value changed
+    if (predsChanged) {
+      batch.set(doc(firestore, "predictions", uid), updatedPreds);
+    }
+  }
+
+  await batch.commit();
+}, [db]);
 
 // ── KNOCKOUT PTS INFO BAR ────────────────────────────────────────────────
 function KnockoutPtsInfo({ stage }) {
@@ -2079,25 +2090,25 @@ export default function App() {
     setShowProfile(false);
   };
 
-  const saveBonusGroups = async (groupPicks) => {
-    if (isBonusLocked()) { toast.show("Bonus picks are locked!", "error"); return; }
-    if (!db) return;
-    const { firestore, doc, setDoc } = db;
-    const bp = bonus[user.id] || { groupWinners: {}, overallWinner: "" };
-    await setDoc(doc(firestore, "bonus", user.id), { groupWinners: groupPicks, overallWinner: bp.overallWinner || "" }, { merge: true });
-    await recalcAll(null, null, null, null, null);
-    toast.show("Group picks saved! ✅", "success");
-  };
+const saveBonusGroups = async (groupPicks) => {
+  if (isBonusLocked()) { toast.show("Bonus picks are locked!", "error"); return; }
+  if (!db) return;
+  const { firestore, doc, setDoc } = db;
+  const bp = bonus[user.id] || { groupWinners: {}, overallWinner: "" };
+  await setDoc(doc(firestore, "bonus", user.id), { groupWinners: groupPicks, overallWinner: bp.overallWinner || "" }, { merge: true });
+  // No recalcAll — bonus pts are only recalculated when admin sets actual winners
+  toast.show("Group picks saved!", "success");
+};
 
-  const saveBonusOverall = async (pick) => {
-    if (isBonusLocked()) { toast.show("Bonus picks are locked!", "error"); return; }
-    if (!db || !pick) { toast.show("Please select a country.", "error"); return; }
-    const { firestore, doc, setDoc } = db;
-    const bp = bonus[user.id] || { groupWinners: {}, overallWinner: "" };
-    await setDoc(doc(firestore, "bonus", user.id), { overallWinner: pick, groupWinners: bp.groupWinners || {} }, { merge: true });
-    await recalcAll(null, null, null, null, null);
-    toast.show(`Overall winner pick saved: ${pick} 🏆`, "success");
-  };
+const saveBonusOverall = async (pick) => {
+  if (isBonusLocked()) { toast.show("Bonus picks are locked!", "error"); return; }
+  if (!db || !pick) { toast.show("Please select a country.", "error"); return; }
+  const { firestore, doc, setDoc } = db;
+  const bp = bonus[user.id] || { groupWinners: {}, overallWinner: "" };
+  await setDoc(doc(firestore, "bonus", user.id), { overallWinner: pick, groupWinners: bp.groupWinners || {} }, { merge: true });
+  // No recalcAll — bonus pts are only recalculated when admin sets actual winners
+  toast.show(`Overall winner pick saved: ${pick} 🏆`, "success");
+};
 
   const tabs = ["matches", "leaderboard", "bonus", ...(user?.isAdmin ? ["admin"] : []), "rules"];
   const tabLabels = { matches: "Matches", leaderboard: "Leaderboard", bonus: "Bonus Picks", admin: "⚙ Admin", rules: "Rules" };
@@ -2256,4 +2267,4 @@ export default function App() {
       <Toast msg={toast.msg} type={toast.type} visible={toast.visible} />
     </>
   );
-}
+}}

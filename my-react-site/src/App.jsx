@@ -359,6 +359,13 @@ function useFirebase(showToast) {
   const [settings, setSettings] = useState({ actualGroupWinners: {}, actualOverallWinner: "" });
   const unsubs = useRef([]);
 
+  // Live refs — always hold the latest data from onSnapshot listeners
+  const usersRef    = useRef({});
+  const matchesRef  = useRef([]);
+  const predsRef    = useRef({});
+  const bonusRef    = useRef({});
+  const settingsRef = useRef({ actualGroupWinners: {}, actualOverallWinner: "" });
+
   const loadFirebase = useCallback(async () => {
     try {
       const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
@@ -387,12 +394,14 @@ function useFirebase(showToast) {
         onSnapshot(collection(firestore, "users"), snap => {
           const u = {};
           snap.forEach(d => { u[d.id] = { id: d.id, ...d.data() }; });
+          usersRef.current = u;
           setUsers(u);
         })
       );
       unsubs.current.push(
         onSnapshot(query(collection(firestore, "matches"), orderBy("kickoffTime")), snap => {
           const m = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          matchesRef.current = m;
           setMatches(m);
         })
       );
@@ -400,6 +409,7 @@ function useFirebase(showToast) {
         onSnapshot(collection(firestore, "predictions"), snap => {
           const p = {};
           snap.forEach(d => { p[d.id] = d.data(); });
+          predsRef.current = p;
           setPreds(p);
         })
       );
@@ -407,6 +417,7 @@ function useFirebase(showToast) {
         onSnapshot(collection(firestore, "bonus"), snap => {
           const b = {};
           snap.forEach(d => { b[d.id] = d.data(); });
+          bonusRef.current = b;
           setBonus(b);
         })
       );
@@ -415,6 +426,7 @@ function useFirebase(showToast) {
           const s = snap.exists()
             ? { actualGroupWinners: snap.data().actualGroupWinners || {}, actualOverallWinner: snap.data().actualOverallWinner || "" }
             : { actualGroupWinners: {}, actualOverallWinner: "" };
+          settingsRef.current = s;
           setSettings(s);
         })
       );
@@ -433,34 +445,21 @@ function useFirebase(showToast) {
     return () => unsubs.current.forEach(u => u());
   }, [loadFirebase]);
 
-  // ── recalcAll: always fetches fresh data from Firestore before recalculating ──
-  const recalcAll = useCallback(async () => {
+  // ── recalcAll: uses live ref data + optional overrides for just-written data ──
+  // Pass `matchOverride` when you've just written a match result — this ensures
+  // recalcAll uses the new result immediately without waiting for the listener.
+  const recalcAll = useCallback(async (matchOverride = null, settingsOverride = null) => {
     if (!db) return;
-    const { firestore, doc, collection, getDoc, getDocs, writeBatch, query, orderBy } = db;
+    const { firestore, doc, writeBatch } = db;
 
-    // Fetch everything fresh — never rely on stale refs or React state
-    const [usersSnap, matchesSnap, predsSnap, bonusSnap, settingsDoc] = await Promise.all([
-      getDocs(collection(firestore, "users")),
-      getDocs(query(collection(firestore, "matches"), orderBy("kickoffTime"))),
-      getDocs(collection(firestore, "predictions")),
-      getDocs(collection(firestore, "bonus")),
-      getDoc(doc(firestore, "settings", "app")),
-    ]);
-
-    const curUsers = {};
-    usersSnap.forEach(d => { curUsers[d.id] = { id: d.id, ...d.data() }; });
-
-    const curMatches = matchesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    const curPreds = {};
-    predsSnap.forEach(d => { curPreds[d.id] = d.data(); });
-
-    const curBonus = {};
-    bonusSnap.forEach(d => { curBonus[d.id] = d.data(); });
-
-    const curSettings = settingsDoc.exists()
-      ? { actualGroupWinners: settingsDoc.data().actualGroupWinners || {}, actualOverallWinner: settingsDoc.data().actualOverallWinner || "" }
-      : { actualGroupWinners: {}, actualOverallWinner: "" };
+    // Merge any just-written match into the current matches list
+    const curUsers    = usersRef.current;
+    const curMatches  = matchOverride
+      ? matchesRef.current.map(m => m.id === matchOverride.id ? { ...m, ...matchOverride } : m)
+      : matchesRef.current;
+    const curPreds    = predsRef.current;
+    const curBonus    = bonusRef.current;
+    const curSettings = settingsOverride ?? settingsRef.current;
 
     const batch = writeBatch(firestore);
 
@@ -502,9 +501,9 @@ function useFirebase(showToast) {
         matchPts, bonusPts, manualPts, totalPts: newTotal,
       }, { merge: true });
 
-    if (predsChanged && Object.keys(updatedPreds).length > 0) {
-      batch.set(doc(firestore, "predictions", uid), updatedPreds, { merge: true });
-    }
+      if (predsChanged && Object.keys(updatedPreds).length > 0) {
+        batch.set(doc(firestore, "predictions", uid), updatedPreds, { merge: true });
+      }
     }
 
     await batch.commit();
@@ -1178,7 +1177,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
     setNewMatch({ home: "", away: "", kickoff: "", deadline: "", stage: "group", group: "" });
   };
 
-  // ── Save score: write to Firestore first, then recalcAll fetches fresh data ──
+  // ── Save score: write to Firestore, then recalcAll with the new data inline ──
   const saveResult = async (mid, h, a) => {
     if (!db || !mid || h === "" || a === "") { toast("Select a match and enter scores.", "error"); return; }
     const match = matches.find(m => m.id === mid);
@@ -1186,14 +1185,11 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
     setSaving(true);
     try {
       const { firestore, doc, updateDoc } = db;
-      // Step 1: write the score to Firestore
-      await updateDoc(doc(firestore, "matches", mid), {
-        resultHome: Math.max(0, Number(h)),
-        resultAway: Math.max(0, Number(a)),
-        completed: true,
-      });
-      // Step 2: recalcAll fetches everything fresh from Firestore — no stale data
-      await recalcAll();
+      const resultHome = Math.max(0, Number(h));
+      const resultAway = Math.max(0, Number(a));
+      await updateDoc(doc(firestore, "matches", mid), { resultHome, resultAway, completed: true });
+      // Pass updated match directly — avoids race condition with server propagation
+      await recalcAll({ id: mid, resultHome, resultAway, completed: true, stage: match?.stage });
       toast("Score saved & points recalculated!", "success");
     } catch (err) {
       console.error(err);
@@ -1209,7 +1205,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
     try {
       const { firestore, doc, updateDoc } = db;
       await updateDoc(doc(firestore, "matches", mid), { resultHome: null, resultAway: null, completed: false });
-      await recalcAll();
+      await recalcAll({ id: mid, resultHome: null, resultAway: null, completed: false });
       toast("Result cleared.", "success");
     } catch (err) {
       console.error(err);
@@ -1226,6 +1222,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
       displayName: adminUsers[uid]?.name || users[uid].displayName,
       manualPts: Number(adminUsers[uid]?.manual || 0),
     });
+    // No match/settings change — refs will have latest user data after the write
     await recalcAll();
     toast("User updated.", "success");
   };
@@ -1266,7 +1263,8 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
     if (!db) return;
     const { firestore, doc, setDoc } = db;
     await setDoc(doc(firestore, "settings", "app"), { actualGroupWinners: groupWinners }, { merge: true });
-    await recalcAll();
+    // Pass updated settings directly so recalcAll doesn't wait for listener
+    await recalcAll(null, { actualGroupWinners: groupWinners, actualOverallWinner: overallWinner });
     toast("Actual group winners saved.", "success");
   };
 
@@ -1274,7 +1272,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
     if (!db) return;
     const { firestore, doc, setDoc } = db;
     await setDoc(doc(firestore, "settings", "app"), { actualOverallWinner: overallWinner }, { merge: true });
-    await recalcAll();
+    await recalcAll(null, { actualGroupWinners: groupWinners, actualOverallWinner: overallWinner });
     toast("Actual overall winner saved.", "success");
   };
 
@@ -1524,17 +1522,18 @@ export default function App() {
     toast.show(isKnockout(stage) ? "Knockout pick saved!" : "Prediction saved!", "success");
   };
 
-  // ── Admin score handlers: write first, recalcAll fetches fresh ──
+  // ── Admin score handlers: pass updated match data directly to recalcAll ──
   const adminSetScore = async (matchId, h, a) => {
     if (!db) return;
     const match = matches.find(m => m.id === matchId);
     if (isKnockout(match?.stage) && Number(h) === Number(a)) { toast.show("Knockout scores can't be equal — must have a winner.", "error"); return; }
     try {
       const { firestore, doc, updateDoc } = db;
-      await updateDoc(doc(firestore, "matches", matchId), {
-        resultHome: Math.max(0, Number(h)), resultAway: Math.max(0, Number(a)), completed: true,
-      });
-      await recalcAll();
+      const resultHome = Math.max(0, Number(h));
+      const resultAway = Math.max(0, Number(a));
+      await updateDoc(doc(firestore, "matches", matchId), { resultHome, resultAway, completed: true });
+      // Pass the updated match directly so recalcAll doesn't rely on the listener catching up
+      await recalcAll({ id: matchId, resultHome, resultAway, completed: true, stage: match?.stage });
       toast.show("Score saved & points recalculated!", "success");
     } catch (err) {
       console.error(err);
@@ -1547,7 +1546,8 @@ export default function App() {
     try {
       const { firestore, doc, updateDoc } = db;
       await updateDoc(doc(firestore, "matches", matchId), { resultHome: null, resultAway: null, completed: false });
-      await recalcAll();
+      // Pass the cleared match directly
+      await recalcAll({ id: matchId, resultHome: null, resultAway: null, completed: false });
       toast.show("Result cleared.", "success");
     } catch (err) {
       console.error(err);

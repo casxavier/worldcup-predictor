@@ -1645,11 +1645,11 @@ export default function App() {
               </div>
             </div>
             <div style={{ marginBottom: 20 }}>
-              <div className="section-label" style={{ marginBottom: 12, color: "var(--knockout-l)", borderBottomColor: "rgba(123,79,212,0.3)" }}>
+              <div className="section-label" style={{ marginBottom: 12, color: "var(--knockout-l)"}}>
                 Knockout Stages — Predict the Outright Winner &amp; 90-min Score
               </div>
               <div style={{ color: "var(--muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.7 }}>
-                From the Round of 32 onwards, predict who wins <strong style={{ color: "var(--text)" }}>and</strong> the 90-minute score. Points increase each round by 1.
+                From the Round of 32 onwards, predict who wins <strong style={{ color: "var(--text)" }}>(Outright winner)</strong> and the 90-minute score. Respective points increase each round by 1. <br></br>
               </div>
               <div style={{ overflowX: "auto", borderRadius: 8, border: "1px solid var(--border)" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>

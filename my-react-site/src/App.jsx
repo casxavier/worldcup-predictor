@@ -758,11 +758,13 @@ function useToast() {
     timerRef.current = setTimeout(() => setState(s => ({ ...s, visible: false })), 3500);
   }, []);
 
+  // Return state and show separately so consumers can extract the stable 'show' function
   return { ...state, show };
 }
 
 // ── FIREBASE HOOK ─────────────────────────────────────────────────────────
-function useFirebase(toast) {
+// 🌟 Change parameter name to showToast to be explicit that it expects a function, not an object
+function useFirebase(showToast) {
   const [db, setDb] = useState(null);
   const [connected, setConnected] = useState(false);
   const [users, setUsers] = useState({});
@@ -847,77 +849,86 @@ function useFirebase(toast) {
     } catch (err) {
       console.error("Firebase init:", err);
       setConnected(false);
-      toast("Firebase connection failed.", "error");
+      showToast("Firebase connection failed.", "error"); // 🌟 Uses the stable function dependency
     }
-  }, [toast]);
+  }, [showToast]); // 🌟 Dependent only on the stable showToast function
 
   useEffect(() => {
     loadFirebase();
     return () => unsubs.current.forEach(u => u());
-  }, [loadFirebase]);
+  }, [loadFirebase]); // This will now run exactly ONCE on mount, preventing teardown loops!
 
-const recalcAll = useCallback(async (overrideUsers, overrideMatches, overridePreds, overrideBonus, overrideSettings) => {
-  if (!db) return;
-  const { firestore, doc, writeBatch } = db;
+  const recalcAll = useCallback(async (overrideUsers, overrideMatches, overridePreds, overrideBonus, overrideSettings) => {
+    if (!db) return;
+    const { firestore, doc, writeBatch } = db;
 
-  const curUsers    = overrideUsers    ?? usersRef.current;
-  const curMatches  = overrideMatches  ?? matchesRef.current;
-  const curPreds    = overridePreds    ?? predsRef.current;
-  const curBonus    = overrideBonus    ?? bonusRef.current;
-  const curSettings = overrideSettings ?? settingsRef.current;
+    const curUsers    = overrideUsers    ?? usersRef.current;
+    const curMatches  = overrideMatches  ?? matchesRef.current;
+    const curPreds    = overridePreds    ?? predsRef.current;
+    const curBonus    = overrideBonus    ?? bonusRef.current;
+    const curSettings = overrideSettings ?? settingsRef.current;
 
-  const batch = writeBatch(firestore);
+    const batch = writeBatch(firestore);
 
-  for (const uid of Object.keys(curUsers)) {
-    let matchPts = 0, bonusPts = 0;
-    const userPreds = curPreds[uid] || {};
-    const updatedPreds = { ...userPreds };
-    let predsChanged = false;
+    for (const uid of Object.keys(curUsers)) {
+      let matchPts = 0, bonusPts = 0;
+      const userPreds = curPreds[uid] || {};
+      const updatedPreds = { ...userPreds };
+      let predsChanged = false;
 
-    for (const match of curMatches) {
-      if (!match.completed) continue;
-      const pred = userPreds[match.id];
-      if (!pred) continue;
-      const newPts = calcPts(Number(pred.home), Number(pred.away), Number(match.resultHome), Number(match.resultAway), match.stage);
-      matchPts += newPts;
-      // Only flag as changed if pts value actually differs
-      if ((pred.pts ?? 0) !== newPts) {
-        updatedPreds[match.id] = { ...pred, pts: newPts };
-        predsChanged = true;
+      for (const match of curMatches) {
+        if (!match.completed) continue;
+        const pred = userPreds[match.id];
+        if (!pred) continue;
+        const newPts = calcPts(Number(pred.home), Number(pred.away), Number(match.resultHome), Number(match.resultAway), match.stage);
+        matchPts += newPts;
+        if ((pred.pts ?? 0) !== newPts) {
+          updatedPreds[match.id] = { ...pred, pts: newPts };
+          predsChanged = true;
+        }
+      }
+
+      const bp = curBonus[uid] || {};
+      const agw = curSettings.actualGroupWinners || {};
+      GROUP_NAMES.forEach(g => {
+        if (agw[g] && bp.groupWinners?.[g] &&
+          agw[g].trim().toLowerCase() === bp.groupWinners[g].trim().toLowerCase()) bonusPts += 5;
+      });
+      if (curSettings.actualOverallWinner && bp.overallWinner &&
+        curSettings.actualOverallWinner.trim().toLowerCase() === bp.overallWinner.trim().toLowerCase()) bonusPts += 20;
+
+      const manualPts = Number(curUsers[uid].manualPts || 0);
+      const newTotal = matchPts + bonusPts + manualPts;
+      const totalChanged = (curUsers[uid].matchPts ?? 0) !== matchPts
+        || (curUsers[uid].bonusPts ?? 0) !== bonusPts
+        || (curUsers[uid].totalPts ?? 0) !== newTotal;
+
+      if (totalChanged) {
+        batch.set(doc(firestore, "users", uid), {
+          matchPts, bonusPts, manualPts, totalPts: newTotal,
+        }, { merge: true });
+      }
+
+      if (predsChanged) {
+        batch.set(doc(firestore, "predictions", uid), updatedPreds);
       }
     }
 
-    const bp = curBonus[uid] || {};
-    const agw = curSettings.actualGroupWinners || {};
-    GROUP_NAMES.forEach(g => {
-      if (agw[g] && bp.groupWinners?.[g] &&
-        agw[g].trim().toLowerCase() === bp.groupWinners[g].trim().toLowerCase()) bonusPts += 5;
-    });
-    if (curSettings.actualOverallWinner && bp.overallWinner &&
-      curSettings.actualOverallWinner.trim().toLowerCase() === bp.overallWinner.trim().toLowerCase()) bonusPts += 20;
+    await batch.commit();
+  }, [db]);
 
-    const manualPts = Number(curUsers[uid].manualPts || 0);
-    const newTotal = matchPts + bonusPts + manualPts;
-    const totalChanged = (curUsers[uid].matchPts ?? 0) !== matchPts
-      || (curUsers[uid].bonusPts ?? 0) !== bonusPts
-      || (curUsers[uid].totalPts ?? 0) !== newTotal;
-
-    // Only write user doc if totals changed
-    if (totalChanged) {
-      batch.set(doc(firestore, "users", uid), {
-        matchPts, bonusPts, manualPts, totalPts: newTotal,
-      }, { merge: true });
-    }
-
-    // Only write predictions doc if any pts value changed
-    if (predsChanged) {
-      batch.set(doc(firestore, "predictions", uid), updatedPreds);
-    }
-  }
-
-  await batch.commit();
-}, [db]);
+  return {
+    db,
+    connected,
+    users,
+    matches,
+    preds,
+    bonus,
+    settings,
+    recalcAll
+  };
 }
+
 // ── KNOCKOUT PTS INFO BAR ────────────────────────────────────────────────
 function KnockoutPtsInfo({ stage }) {
   const base = knockoutBasePts(stage);
@@ -1581,7 +1592,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
       stage: newMatch.stage, groupName: newMatch.stage === "group" ? newMatch.group : "",
       completed: false, resultHome: null, resultAway: null,
     });
-    toast("Match added! ✅", "success");
+    toast("Match added!", "success");
     setNewMatch({ home: "", away: "", kickoff: "", deadline: "", stage: "group", group: "" });
   };
 

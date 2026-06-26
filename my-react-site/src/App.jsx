@@ -917,7 +917,7 @@ const recalcAll = useCallback(async (overrideUsers, overrideMatches, overridePre
 
   await batch.commit();
 }, [db]);
-
+}
 // ── KNOCKOUT PTS INFO BAR ────────────────────────────────────────────────
 function KnockoutPtsInfo({ stage }) {
   const base = knockoutBasePts(stage);
@@ -944,7 +944,7 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
   useEffect(() => {
     setPredH(preds?.[match.id]?.home ?? "");
     setPredA(preds?.[match.id]?.away ?? "");
-  }, [preds, match.id]);
+  }, [match.id]);
 
   useEffect(() => {
     setScoreH(match.resultHome ?? "");
@@ -1074,12 +1074,16 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
             {/* Score inputs */}
             <div className="score-row-ko">
               <span className="score-label-ko">90-min score:</span>
-              <input
-                type="number" min="0" value={predH}
-                onChange={e => setPredH(e.target.value)}
-                placeholder="0"
-                style={{ width: 64 }}
-              />
+            <input
+              type="number"
+              value={predH}
+              onChange={(e) => setPredH(e.target.value)}
+              onBlur={() => {
+                if (predH !== "" && predA !== "") {
+                  onSavePred(match.id, predH, predA);
+                }
+              }}
+            />
               <span className="vs">–</span>
               <input
                 type="number" min="0" value={predA}
@@ -2267,4 +2271,5 @@ const saveBonusOverall = async (pick) => {
       <Toast msg={toast.msg} type={toast.type} visible={toast.visible} />
     </>
   );
-}}
+}
+

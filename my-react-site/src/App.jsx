@@ -1652,31 +1652,77 @@ export default function App() {
                 From the Round of 32 onwards, predict who wins <strong style={{ color: "var(--text)" }}>(Outright winner)</strong> and the 90-minute score. Respective points increase each round by 1. <br></br>
               </div>
               <div style={{ overflowX: "auto", borderRadius: 8, border: "1px solid var(--border)" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>
-                  <thead>
-                    <tr style={{ background: "rgba(123,79,212,0.1)" }}>
-                      {["Stage", "Correct Winner", "Correct Goal Diff", "Exact Score"].map(h => (
-                        <th key={h} style={{ padding: "10px 14px", fontSize: 11, color: "var(--knockout-l)", textAlign: h === "Stage" ? "left" : "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[{ label: "Round of 32", stage: "R32" }, { label: "Round of 16", stage: "R16" }, { label: "Quarter-Final", stage: "QF" }, { label: "Semi-Final", stage: "SF" }, { label: "Final", stage: "Final" }].map(({ label, stage }) => {
-                      const base = knockoutBasePts(stage);
-                      return (
-                        <tr key={stage} style={{ borderTop: "1px solid var(--border)" }}>
-                          <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>{label}</td>
-                          <td style={{ padding: "10px 14px", textAlign: "center" }}><span className="pts-badge knockout">{base} pts</span></td>
-                          <td style={{ padding: "10px 14px", textAlign: "center" }}><span className="pts-badge knockout">{base + 1} pts</span></td>
-                          <td style={{ padding: "10px 14px", textAlign: "center" }}><span className="pts-badge knockout">{base + 2} pts</span></td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+  <style>{`
+    .pts-badge.badge-winner {
+      background: #7EB8FF !important;
+      color: #000000 !important;
+      border-color: #7EB8FF !important;
+    }
+    .pts-badge.badge-diff {
+      background: var(--malachite-l) !important;
+      color: #000000 !important;
+      border-color: var(--malachite-l) !important;
+    }
+    .pts-badge.badge-exact {
+      background: var(--gold-bright) !important;
+      color: #000000 !important;
+      border-color: var(--gold-bright) !important;
+    }
+  `}</style>
+  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>
+  <thead>
+    <tr style={{ background: "rgba(123,79,212,0.1)" }}>
+      {["Stage", "Correct Winner", "Correct Goal Diff", "Exact Score"].map(h => {
+        // Assign the specific text color to each column header wording
+        let wordingColor = "var(--knockout-l)"; // default color
+        if (h === "Correct Winner") wordingColor = "#7EB8FF";
+        if (h === "Correct Goal Diff") wordingColor = "var(--malachite-l)";
+        if (h === "Exact Score") wordingColor = "var(--gold-bright)";
+
+        return (
+          <th 
+            key={h} 
+            style={{ 
+              padding: "10px 14px", 
+              fontSize: 11, 
+              color: wordingColor, // 🌟 Wording color applied here
+              textAlign: h === "Stage" ? "left" : "center", 
+              fontFamily: "'Barlow Condensed',sans-serif", 
+              letterSpacing: 1, 
+              textTransform: "uppercase" 
+            }}
+          >
+            {h}
+          </th>
+        );
+      })}
+    </tr>
+  </thead>
+  <tbody>
+    {[{ label: "Round of 32", stage: "R32" }, { label: "Round of 16", stage: "R16" }, { label: "Quarter-Final", stage: "QF" }, { label: "Semi-Final", stage: "SF" }, { label: "Final", stage: "Final" }].map(({ label, stage }) => {
+      const base = knockoutBasePts(stage);
+      return (
+        <tr key={stage} style={{ borderTop: "1px solid var(--border)" }}>
+          <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>{label}</td>
+          
+          {/* The pts text badges below remain exactly the same as your original style */}
+          <td style={{ padding: "10px 14px", textAlign: "center" }}>
+            <span className="pts-badge knockout">{base} pts</span>
+          </td>
+          <td style={{ padding: "10px 14px", textAlign: "center" }}>
+            <span className="pts-badge knockout">{base + 1} pts</span>
+          </td>
+          <td style={{ padding: "10px 14px", textAlign: "center" }}>
+            <span className="pts-badge knockout">{base + 2} pts</span>
+          </td>
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
               </div>
               <div style={{ marginTop: 12, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
-                💡 <strong style={{ color: "var(--text)" }}>Example:</strong> Round of 32, Japan vs Tunisia — you predict Japan wins 3–1. The actual result is Japan 2–0. You get <strong style={{ color: "var(--knockout-l)" }}>2 pts</strong> (correct winner). If you predicted 2–0 exactly, you'd get <strong style={{ color: "var(--knockout-l)" }}>4 pts</strong>.
+                <strong style={{ color: "var(--text)" }}>Example:</strong> Round of 32, Japan vs Tunisia — you predict Japan wins 3–1. The actual result is Japan 2–0. You get <strong style={{ color: "var(--knockout-l)" }}>2 pts</strong> (correct winner). If you predicted 2–0 exactly, you'd get <strong style={{ color: "var(--knockout-l)" }}>4 pts</strong>.
               </div>
             </div>
             <div>

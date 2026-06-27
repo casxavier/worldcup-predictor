@@ -517,9 +517,9 @@ function KnockoutPtsInfo({ stage }) {
   const base = knockoutBasePts(stage);
   return (
     <div className="ko-pts-info">
-      <span>⚽ Correct Winner: <strong>{base} pts</strong></span>
-      <span>📐 Correct Goal Diff: <strong>{base + 1} pts</strong></span>
-      <span>🎯 Exact Score: <strong>{base + 2} pts</strong></span>
+      <span>Correct Winner: <strong>{base} pts</strong></span>
+      <span>Correct Goal Diff: <strong>{base + 1} pts</strong></span>
+      <span>Exact Score: <strong>{base + 2} pts</strong></span>
     </div>
   );
 }

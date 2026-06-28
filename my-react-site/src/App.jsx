@@ -1779,7 +1779,7 @@ export default function App() {
               {/* Outright winner bonus callout */}
               <div style={{ background: "rgba(155,89,182,0.1)", border: "1px solid rgba(155,89,182,0.35)", borderRadius: 8, padding: "12px 16px", marginBottom: 14 }}>
                 <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 13, color: "var(--outright-l)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
-                  Outright Winner Bonus · +1 pt
+                  Outright Winner Bonus (+1 pt)
                 </div>
                 <div style={{ fontSize: 13, color: "var(--muted-l)", lineHeight: 1.7 }}>
                   If you correctly predict the outright winner, you earn a bonus <strong style={{ color: "var(--outright-l)" }}>+1 pt</strong>. This is on top of your score points.

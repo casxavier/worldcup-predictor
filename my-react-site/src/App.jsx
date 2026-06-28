@@ -621,7 +621,7 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
     <div className={matchItemClass} style={old ? { opacity: 0.55 } : {}}>
       <div className="match-header">
         <div style={{ minWidth: 0 }}>
-          {ko && <div className="knockout-badge">🏆 Knockout · {stageLabel}</div>}
+          {ko && <div className="knockout-badge">Knockout · {stageLabel}</div>}
           <div className="match-teams">
             {match.homeTeam} <span style={{ color: "var(--muted)" }}>vs</span> {match.awayTeam}
           </div>

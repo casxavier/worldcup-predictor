@@ -57,6 +57,7 @@ function knockoutBasePts(stage) {
   return bases[stage] ?? 2;
 }
 
+// Returns points for the 90-min score prediction (unchanged from before)
 function calcKnockoutPts(ph, pa, ah, aa, stage) {
   ph = Number(ph); pa = Number(pa); ah = Number(ah); aa = Number(aa);
   const base = knockoutBasePts(stage);
@@ -64,6 +65,15 @@ function calcKnockoutPts(ph, pa, ah, aa, stage) {
   if ((ph - pa) === (ah - aa) && outcome(ph, pa) === outcome(ah, aa)) return base + 1;
   if (outcome(ph, pa) === outcome(ah, aa)) return base;
   return 0;
+}
+
+// NEW: +1 pt if user's predicted winner (from 90-min score) matches the actual outright winner
+function calcOutrightPts(ph, pa, homeTeam, awayTeam, actualOutrightWinner) {
+  if (!actualOutrightWinner) return 0;
+  ph = Number(ph); pa = Number(pa);
+  if (ph === pa) return 0; // draw prediction — no outright winner
+  const predictedWinner = ph > pa ? homeTeam : awayTeam;
+  return predictedWinner.trim().toLowerCase() === actualOutrightWinner.trim().toLowerCase() ? 1 : 0;
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
@@ -92,8 +102,14 @@ function isOldMatch(match) {
 
 function outcome(h, a) { return h > a ? "home" : a > h ? "away" : "draw"; }
 
-function calcPts(ph, pa, ah, aa, stage) {
-  if (isKnockout(stage)) return calcKnockoutPts(ph, pa, ah, aa, stage);
+function calcPts(ph, pa, ah, aa, stage, homeTeam, awayTeam, outrightWinner) {
+  if (isKnockout(stage)) {
+    const scorePts = calcKnockoutPts(ph, pa, ah, aa, stage);
+    const outrightPts = outrightWinner
+      ? calcOutrightPts(ph, pa, homeTeam, awayTeam, outrightWinner)
+      : 0;
+    return scorePts + outrightPts;
+  }
   if (ph === ah && pa === aa) return 3;
   if ((ph - pa) === (ah - aa)) return 2;
   if (outcome(ph, pa) === outcome(ah, aa)) return 1;
@@ -105,13 +121,23 @@ function loadSession() {
 }
 function saveSession(s) { localStorage.setItem("wc_session", JSON.stringify(s)); }
 
-function ptsReason(pts, stage) {
+function ptsReason(pts, stage, ph, pa, homeTeam, awayTeam, outrightWinner) {
   if (isKnockout(stage)) {
     const base = knockoutBasePts(stage);
-    if (pts === base + 2) return { label: "Exact Score", color: "var(--gold-bright)" };
-    if (pts === base + 1) return { label: "Correct Goal Diff", color: "var(--malachite-l)" };
-    if (pts === base)     return { label: "Correct Winner", color: "#7EB8FF" };
-    return { label: "No Points", color: "var(--muted)" };
+    const scorePts = calcKnockoutPts(ph ?? 0, pa ?? 0, ph ?? 0, pa ?? 0, stage); // dummy — we decode from total
+    // Decode by subtracting outright bonus
+    const outrightBonus = outrightWinner && ph !== undefined && pa !== undefined
+      ? calcOutrightPts(ph, pa, homeTeam, awayTeam, outrightWinner)
+      : 0;
+    const netPts = pts - outrightBonus;
+    let label = "";
+    if (netPts === base + 2) label = "Exact Score";
+    else if (netPts === base + 1) label = "Correct Goal Diff";
+    else if (netPts === base) label = "Correct Winner";
+    else label = "No Points";
+    if (outrightBonus > 0) label += " + Outright";
+    const color = netPts >= base + 2 ? "var(--gold-bright)" : netPts >= base + 1 ? "var(--malachite-l)" : netPts >= base ? "#7EB8FF" : outrightBonus > 0 ? "#BB88FF" : "var(--muted)";
+    return { label, color };
   }
   if (pts === 3) return { label: "Exact Score", color: "var(--gold-bright)" };
   if (pts === 2) return { label: "Correct Diff", color: "var(--malachite-l)" };
@@ -142,6 +168,8 @@ const CSS = `
   --accent:     #C9A84C;
   --knockout:   #1A8C5A;
   --knockout-l: #1A8C5A;
+  --outright:   #9B59B6;
+  --outright-l: #BB88FF;
   --r:          10px;
 }
 
@@ -245,6 +273,13 @@ button:disabled{opacity:.35;cursor:not-allowed;transform:none}
 .pts-badge{display:inline-block;padding:2px 10px;border-radius:3px;font-weight:700;font-size:12px;background:var(--malachite);color:#fff;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;}
 .pts-badge.zero{background:#2a2a2a;color:var(--muted)}
 .pts-badge.knockout{background:var(--knockout);color:#fff}
+
+/* Outright winner admin panel */
+.outright-admin-wrap{margin-top:10px;padding:10px 14px;background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.35);border-radius:8px;}
+.outright-admin-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--outright-l);margin-bottom:8px;display:block;}
+.outright-team-btn{padding:7px 14px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:.15s;white-space:nowrap;}
+.outright-team-btn.selected{background:rgba(155,89,182,0.28);border-color:var(--outright-l);color:var(--outright-l);}
+.outright-team-btn:hover:not(.selected){border-color:rgba(155,89,182,0.5);color:var(--outright-l);}
 
 .match-edit-row{margin-top:10px;padding:10px 12px;background:rgba(26,77,143,0.12);border:1px solid rgba(26,77,143,0.3);border-radius:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 
@@ -359,7 +394,6 @@ function useFirebase(showToast) {
   const [settings, setSettings] = useState({ actualGroupWinners: {}, actualOverallWinner: "" });
   const unsubs = useRef([]);
 
-  // Live refs — always hold the latest data from onSnapshot listeners
   const usersRef    = useRef({});
   const matchesRef  = useRef([]);
   const predsRef    = useRef({});
@@ -377,7 +411,6 @@ function useFirebase(showToast) {
       const app = initializeApp(FIREBASE_CONFIG);
       const firestore = getFirestore(app);
 
-      // Seed default users if not present
       const snap = await getDoc(doc(firestore, "users", "user1"));
       if (!snap.exists()) {
         const batch = writeBatch(firestore);
@@ -445,14 +478,12 @@ function useFirebase(showToast) {
     return () => unsubs.current.forEach(u => u());
   }, [loadFirebase]);
 
-  // ── recalcAll: uses live ref data + optional overrides for just-written data ──
-  // Pass `matchOverride` when you've just written a match result — this ensures
-  // recalcAll uses the new result immediately without waiting for the listener.
+  // recalcAll: uses live ref data + optional overrides for just-written data
+  // matchOverride may now include outrightWinner
   const recalcAll = useCallback(async (matchOverride = null, settingsOverride = null) => {
     if (!db) return;
     const { firestore, doc, writeBatch } = db;
 
-    // Merge any just-written match into the current matches list
     const curUsers    = usersRef.current;
     const curMatches  = matchOverride
       ? matchesRef.current.map(m => m.id === matchOverride.id ? { ...m, ...matchOverride } : m)
@@ -476,7 +507,10 @@ function useFirebase(showToast) {
         const newPts = calcPts(
           Number(pred.home), Number(pred.away),
           Number(match.resultHome), Number(match.resultAway),
-          match.stage
+          match.stage,
+          match.homeTeam,
+          match.awayTeam,
+          match.outrightWinner || null
         );
         matchPts += newPts;
         if ((pred.pts ?? -1) !== newPts) {
@@ -517,9 +551,10 @@ function KnockoutPtsInfo({ stage }) {
   const base = knockoutBasePts(stage);
   return (
     <div className="ko-pts-info">
-      <span>Correct Winner: <strong>{base} pts</strong></span>
+      <span>Outright Winner: <strong>1 pt</strong></span>
+      <span>Correct 90-min Winner: <strong>{base} pts</strong></span>
       <span>Correct Goal Diff: <strong>{base + 1} pts</strong></span>
-      <span>Exact Score: <strong>{base + 2} pts</strong></span>
+      <span>Exact 90-min Score: <strong>{base + 2} pts</strong></span>
     </div>
   );
 }
@@ -531,6 +566,8 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
   const [predA, setPredA] = useState(preds?.[match.id]?.away ?? "");
   const [scoreH, setScoreH] = useState(match.resultHome ?? "");
   const [scoreA, setScoreA] = useState(match.resultAway ?? "");
+  // Admin: outright winner picker for KO matches
+  const [adminOutright, setAdminOutright] = useState(match.outrightWinner || "");
 
   useEffect(() => {
     setPredH(preds?.[match.id]?.home ?? "");
@@ -540,7 +577,8 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
   useEffect(() => {
     setScoreH(match.resultHome ?? "");
     setScoreA(match.resultAway ?? "");
-  }, [match.resultHome, match.resultAway]);
+    setAdminOutright(match.outrightWinner || "");
+  }, [match.resultHome, match.resultAway, match.outrightWinner]);
 
   const locked = isLocked(match);
   const old = isOldMatch(match);
@@ -610,13 +648,45 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
             <input type="number" min="0" value={scoreH} onChange={e => setScoreH(e.target.value)} placeholder="H" style={{ width: 60 }} />
             <span className="vs" style={{ fontSize: 13 }}>–</span>
             <input type="number" min="0" value={scoreA} onChange={e => setScoreA(e.target.value)} placeholder="A" style={{ width: 60 }} />
-            <button className="btn-blue" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => onSetScore(match.id, scoreH, scoreA)}>
+            <button className="btn-blue" style={{ padding: "6px 12px", fontSize: 12 }}
+              onClick={() => onSetScore(match.id, scoreH, scoreA, ko ? adminOutright : null)}>
               {match.completed ? "Update" : "Set"} Score
             </button>
             {match.completed && (
               <button className="btn-red" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => onClearScore(match.id)}>Clear</button>
             )}
           </div>
+          {/* Outright winner picker — KO only */}
+          {ko && (
+            <div className="outright-admin-wrap">
+              <span className="outright-admin-label">Outright Winner (+1 pt bonus)</span>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  className={`outright-team-btn${adminOutright === match.homeTeam ? " selected" : ""}`}
+                  onClick={() => setAdminOutright(match.homeTeam)}
+                >{match.homeTeam}</button>
+                <span style={{ color: "var(--muted)", fontSize: 12, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, alignSelf: "center" }}>OR</span>
+                <button
+                  className={`outright-team-btn${adminOutright === match.awayTeam ? " selected" : ""}`}
+                  onClick={() => setAdminOutright(match.awayTeam)}
+                >{match.awayTeam}</button>
+                {adminOutright && (
+                  <button className="btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}
+                    onClick={() => setAdminOutright("")}>Clear</button>
+                )}
+              </div>
+              {adminOutright && (
+                <div className="hint" style={{ marginTop: 6, color: "var(--outright-l)" }}>
+                  Outright winner set: <strong>{adminOutright}</strong> — players who predicted this team win +1 pt regardless of 90-min result.
+                </div>
+              )}
+              {!adminOutright && (
+                <div className="hint" style={{ marginTop: 6 }}>
+                  Set after extra time / penalties. Leave blank if match was decided in 90 mins.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -689,13 +759,15 @@ function MatchItem({ match, user, preds, onSavePred, onSetScore, onClearScore })
             {match.homeTeam} {match.resultHome} – {match.resultAway} {match.awayTeam}
           </strong>
           {ko && (
-            <> · Winner: <strong>
-              {Number(match.resultHome) > Number(match.resultAway) ? match.homeTeam : Number(match.resultAway) > Number(match.resultHome) ? match.awayTeam : "Draw (AET/Pens)"}
+            <> · Outright winner: <strong style={{ color: "var(--outright-l)" }}>
+              {match.outrightWinner
+                ? match.outrightWinner
+                : (Number(match.resultHome) > Number(match.resultAway) ? match.homeTeam : Number(match.resultAway) > Number(match.resultHome) ? match.awayTeam : "TBD")}
             </strong></>
           )}
           {userPred && !user?.isAdmin && (() => {
             const pts = userPred.pts ?? 0;
-            const reason = ptsReason(pts, match.stage);
+            const reason = ptsReason(pts, match.stage, Number(userPred.home), Number(userPred.away), match.homeTeam, match.awayTeam, match.outrightWinner);
             return (
               <> · Your pick: <strong style={{ color: "var(--text)" }}>{userPred.home}–{userPred.away}</strong>
               {" "}· <span style={{ color: reason.color, fontWeight: 700, fontSize: 12 }}>{reason.label}</span>
@@ -763,7 +835,7 @@ function MatchesTab({ user, matches, preds, users, onSavePred, onSetScore, onCle
                   </thead>
                   <tbody>
                     {rows.map(({ uid, u, p }) => {
-                      const reason = ptsReason(p.pts ?? 0, match.stage);
+                      const reason = ptsReason(p.pts ?? 0, match.stage, Number(p.home), Number(p.away), match.homeTeam, match.awayTeam, match.outrightWinner);
                       const predWinner = ko && p.home !== undefined && p.away !== undefined && Number(p.home) !== Number(p.away)
                         ? (Number(p.home) > Number(p.away) ? match.homeTeam : match.awayTeam) : null;
                       return (
@@ -863,8 +935,8 @@ function LeaderboardTab({ users, matches, preds }) {
                                   {completedMatches.map(m => {
                                     const ko = isKnockout(m.stage);
                                     const pred = userPreds[m.id];
-                                    const pts = pred ? (pred.pts ?? calcPts(Number(pred.home), Number(pred.away), Number(m.resultHome), Number(m.resultAway), m.stage)) : null;
-                                    const reason = pred ? ptsReason(pts, m.stage) : null;
+                                    const pts = pred ? (pred.pts ?? calcPts(Number(pred.home), Number(pred.away), Number(m.resultHome), Number(m.resultAway), m.stage, m.homeTeam, m.awayTeam, m.outrightWinner || null)) : null;
+                                    const reason = pred ? ptsReason(pts, m.stage, Number(pred.home), Number(pred.away), m.homeTeam, m.awayTeam, m.outrightWinner) : null;
                                     const stageLabel = m.stage === "group" ? "Group" : m.stage;
                                     return (
                                       <tr key={m.id} style={{ borderTop: "1px solid var(--border)" }}>
@@ -872,7 +944,10 @@ function LeaderboardTab({ users, matches, preds }) {
                                         <td style={{ padding: "7px 14px", fontSize: 11, textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif" }}>
                                           <span style={{ padding: "2px 7px", borderRadius: 3, background: ko ? "rgba(123,79,212,0.18)" : "rgba(201,168,76,0.1)", color: ko ? "var(--knockout-l)" : "var(--gold)", fontWeight: 700, fontSize: 10 }}>{stageLabel}</span>
                                         </td>
-                                        <td style={{ padding: "7px 14px", fontSize: 12, textAlign: "center", color: "var(--gold-bright)", fontWeight: 700, fontFamily: "'Barlow Condensed',sans-serif" }}>{m.resultHome} – {m.resultAway}</td>
+                                        <td style={{ padding: "7px 14px", fontSize: 12, textAlign: "center", color: "var(--gold-bright)", fontWeight: 700, fontFamily: "'Barlow Condensed',sans-serif" }}>
+                                          {m.resultHome} – {m.resultAway}
+                                          {ko && m.outrightWinner && <div style={{ fontSize: 10, color: "var(--outright-l)", fontWeight: 700 }}>🏅 {m.outrightWinner}</div>}
+                                        </td>
                                         <td style={{ padding: "7px 14px", fontSize: 12, textAlign: "center", color: pred ? "var(--text)" : "var(--muted)", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: pred ? 700 : 400 }}>{pred ? `${pred.home} – ${pred.away}` : "No pick"}</td>
                                         <td style={{ padding: "7px 14px", fontSize: 11, textAlign: "center", color: reason ? reason.color : "var(--muted)", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700 }}>{reason ? reason.label : "—"}</td>
                                         <td style={{ padding: "7px 14px", textAlign: "center" }}>
@@ -1036,13 +1111,15 @@ const tdStyle = { padding: "8px 14px", fontSize: 13, color: "var(--muted-l)", fo
 function AdminMatchRow({ m, preds, users, onSaveResult, onClearResult, onEdit, onDelete }) {
   const [mH, setMH] = useState(m.resultHome ?? "");
   const [mA, setMA] = useState(m.resultAway ?? "");
+  const [outright, setOutright] = useState(m.outrightWinner || "");
   const [open, setOpen] = useState(false);
   const ko = isKnockout(m.stage);
 
   useEffect(() => {
     setMH(m.resultHome ?? "");
     setMA(m.resultAway ?? "");
-  }, [m.resultHome, m.resultAway]);
+    setOutright(m.outrightWinner || "");
+  }, [m.resultHome, m.resultAway, m.outrightWinner]);
 
   const playerRows = Object.entries(preds)
     .filter(([, mp]) => mp[m.id])
@@ -1074,7 +1151,25 @@ function AdminMatchRow({ m, preds, users, onSaveResult, onClearResult, onEdit, o
           <input type="number" min="0" value={mH} onChange={e => setMH(e.target.value)} placeholder="H" style={{ width: 56 }} />
           <span className="vs" style={{ fontSize: 13 }}>–</span>
           <input type="number" min="0" value={mA} onChange={e => setMA(e.target.value)} placeholder="A" style={{ width: 56 }} />
-          <button className="btn-blue" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => onSaveResult(m.id, mH, mA)}>{m.completed ? "Update" : "Set"}</button>
+          {ko && (
+            <>
+              <span style={{ fontSize: 10, color: "var(--outright-l)", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, marginLeft: 4 }}>Outright:</span>
+              <select
+                style={{ width: 130, padding: "6px 8px", fontSize: 12 }}
+                value={outright}
+                onChange={e => setOutright(e.target.value)}
+                onClick={e => e.stopPropagation()}
+              >
+                <option value="">— none —</option>
+                <option value={m.homeTeam}>{m.homeTeam}</option>
+                <option value={m.awayTeam}>{m.awayTeam}</option>
+              </select>
+            </>
+          )}
+          <button className="btn-blue" style={{ padding: "6px 12px", fontSize: 12 }}
+            onClick={() => onSaveResult(m.id, mH, mA, ko ? outright : null)}>
+            {m.completed ? "Update" : "Set"}
+          </button>
           {m.completed && <button className="btn-ghost" style={{ padding: "6px 12px", fontSize: 12, color: "var(--red)", borderColor: "var(--red)" }} onClick={() => onClearResult(m.id)}>Clear</button>}
         </div>
         <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
@@ -1096,6 +1191,7 @@ function AdminMatchRow({ m, preds, users, onSaveResult, onClearResult, onEdit, o
                 <th style={{ ...thStyle, textAlign: "center", color: ko ? "var(--knockout-l)" : "var(--gold)" }}>{ko ? "90-min Score" : "Prediction"}</th>
                 {m.completed && <>
                   <th style={{ ...thStyle, textAlign: "center", color: ko ? "var(--knockout-l)" : "var(--gold)" }}>Result</th>
+                  <th style={{ ...thStyle, textAlign: "center", color: ko ? "var(--outright-l)" : "var(--gold)" }}>Outright</th>
                   <th style={{ ...thStyle, textAlign: "center", color: ko ? "var(--knockout-l)" : "var(--gold)" }}>Outcome</th>
                   <th style={{ ...thStyle, textAlign: "center", color: ko ? "var(--knockout-l)" : "var(--gold)" }}>Pts</th>
                 </>}
@@ -1103,10 +1199,11 @@ function AdminMatchRow({ m, preds, users, onSaveResult, onClearResult, onEdit, o
             </thead>
             <tbody>
               {playerRows.map(({ uid, u, p }) => {
-                const pts = m.completed ? (p.pts ?? calcPts(Number(p.home), Number(p.away), Number(m.resultHome), Number(m.resultAway), m.stage)) : null;
-                const reason = m.completed ? ptsReason(pts, m.stage) : null;
+                const pts = m.completed ? (p.pts ?? calcPts(Number(p.home), Number(p.away), Number(m.resultHome), Number(m.resultAway), m.stage, m.homeTeam, m.awayTeam, m.outrightWinner || null)) : null;
+                const reason = m.completed ? ptsReason(pts, m.stage, Number(p.home), Number(p.away), m.homeTeam, m.awayTeam, m.outrightWinner) : null;
                 const predWinner = ko && p.home !== undefined && p.away !== undefined && Number(p.home) !== Number(p.away)
                   ? (Number(p.home) > Number(p.away) ? m.homeTeam : m.awayTeam) : null;
+                const gotOutright = ko && m.outrightWinner && predWinner && predWinner.trim().toLowerCase() === m.outrightWinner.trim().toLowerCase();
                 return (
                   <tr key={uid} style={{ borderTop: "1px solid var(--border)" }}>
                     <td style={tdStyle}>{u?.displayName || uid}</td>
@@ -1114,6 +1211,13 @@ function AdminMatchRow({ m, preds, users, onSaveResult, onClearResult, onEdit, o
                     <td style={{ ...tdStyle, textAlign: "center", fontWeight: 700, color: "var(--text)" }}>{p.home} – {p.away}</td>
                     {m.completed && <>
                       <td style={{ ...tdStyle, textAlign: "center", color: "var(--gold-bright)", fontWeight: 700 }}>{m.resultHome} – {m.resultAway}</td>
+                      <td style={{ ...tdStyle, textAlign: "center", fontWeight: 700, fontSize: 11 }}>
+                        {ko
+                          ? (m.outrightWinner
+                              ? <span style={{ color: gotOutright ? "var(--outright-l)" : "var(--muted)" }}>{gotOutright ? "✓ +1pt" : "✗"}</span>
+                              : <span style={{ color: "var(--muted)" }}>—</span>)
+                          : <span style={{ color: "var(--muted)" }}>—</span>}
+                      </td>
                       <td style={{ ...tdStyle, textAlign: "center", color: reason.color, fontWeight: 700, fontSize: 11 }}>{reason.label}</td>
                       <td style={{ ...tdStyle, textAlign: "center" }}>
                         <span className={`pts-badge${pts === 0 ? " zero" : ko ? " knockout" : ""}`}>{pts}pt{pts !== 1 ? "s" : ""}</span>
@@ -1136,6 +1240,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
   const [resultSel, setResultSel] = useState("");
   const [resultH, setResultH] = useState("");
   const [resultA, setResultA] = useState("");
+  const [resultOutright, setResultOutright] = useState("");
   const [editMatch, setEditMatch] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [adminUsers, setAdminUsers] = useState({});
@@ -1157,8 +1262,13 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
   useEffect(() => {
     if (resultSel) {
       const m = matches.find(x => x.id === resultSel);
-      if (m?.completed) { setResultH(m.resultHome ?? ""); setResultA(m.resultAway ?? ""); }
-      else { setResultH(""); setResultA(""); }
+      if (m?.completed) {
+        setResultH(m.resultHome ?? "");
+        setResultA(m.resultAway ?? "");
+        setResultOutright(m.outrightWinner || "");
+      } else {
+        setResultH(""); setResultA(""); setResultOutright("");
+      }
     }
   }, [resultSel, matches]);
 
@@ -1171,14 +1281,14 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
       kickoffTime: new Date(newMatch.kickoff).toISOString(),
       deadline: newMatch.deadline ? new Date(newMatch.deadline).toISOString() : new Date(newMatch.kickoff).toISOString(),
       stage: newMatch.stage, groupName: newMatch.stage === "group" ? newMatch.group : "",
-      completed: false, resultHome: null, resultAway: null,
+      completed: false, resultHome: null, resultAway: null, outrightWinner: null,
     });
     toast("Match added!", "success");
     setNewMatch({ home: "", away: "", kickoff: "", deadline: "", stage: "group", group: "" });
   };
 
-  // ── Save score: write to Firestore, then recalcAll with the new data inline ──
-  const saveResult = async (mid, h, a) => {
+  // saveResult now accepts outrightWinner (string or null)
+  const saveResult = async (mid, h, a, outrightWinner = null) => {
     if (!db || !mid || h === "" || a === "") { toast("Select a match and enter scores.", "error"); return; }
     const match = matches.find(m => m.id === mid);
     if (isKnockout(match?.stage) && Number(h) === Number(a)) { toast("Knockout scores can't be equal — must have a winner.", "error"); return; }
@@ -1187,9 +1297,12 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
       const { firestore, doc, updateDoc } = db;
       const resultHome = Math.max(0, Number(h));
       const resultAway = Math.max(0, Number(a));
-      await updateDoc(doc(firestore, "matches", mid), { resultHome, resultAway, completed: true });
-      // Pass updated match directly — avoids race condition with server propagation
-      await recalcAll({ id: mid, resultHome, resultAway, completed: true, stage: match?.stage });
+      const updateData = { resultHome, resultAway, completed: true };
+      if (isKnockout(match?.stage)) {
+        updateData.outrightWinner = outrightWinner || null;
+      }
+      await updateDoc(doc(firestore, "matches", mid), updateData);
+      await recalcAll({ id: mid, resultHome, resultAway, completed: true, stage: match?.stage, homeTeam: match?.homeTeam, awayTeam: match?.awayTeam, outrightWinner: outrightWinner || null });
       toast("Score saved & points recalculated!", "success");
     } catch (err) {
       console.error(err);
@@ -1204,8 +1317,8 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
     setSaving(true);
     try {
       const { firestore, doc, updateDoc } = db;
-      await updateDoc(doc(firestore, "matches", mid), { resultHome: null, resultAway: null, completed: false });
-      await recalcAll({ id: mid, resultHome: null, resultAway: null, completed: false });
+      await updateDoc(doc(firestore, "matches", mid), { resultHome: null, resultAway: null, completed: false, outrightWinner: null });
+      await recalcAll({ id: mid, resultHome: null, resultAway: null, completed: false, outrightWinner: null });
       toast("Result cleared.", "success");
     } catch (err) {
       console.error(err);
@@ -1222,7 +1335,6 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
       displayName: adminUsers[uid]?.name || users[uid].displayName,
       manualPts: Number(adminUsers[uid]?.manual || 0),
     });
-    // No match/settings change — refs will have latest user data after the write
     await recalcAll();
     toast("User updated.", "success");
   };
@@ -1263,7 +1375,6 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
     if (!db) return;
     const { firestore, doc, setDoc } = db;
     await setDoc(doc(firestore, "settings", "app"), { actualGroupWinners: groupWinners }, { merge: true });
-    // Pass updated settings directly so recalcAll doesn't wait for listener
     await recalcAll(null, { actualGroupWinners: groupWinners, actualOverallWinner: overallWinner });
     toast("Actual group winners saved.", "success");
   };
@@ -1292,7 +1403,7 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
 
       {saving && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 9998, background: "var(--gold)", color: "#0a0a0a", textAlign: "center", padding: "6px", fontSize: 12, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, letterSpacing: 1 }}>
-          ⏳ Saving & recalculating points…
+          Saving & recalculating points…
         </div>
       )}
 
@@ -1338,8 +1449,13 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
                 ))}
               </select>
             </div>
-            {selectedMatch?.completed && <div className="hint">Current: <strong style={{ color: "var(--gold)" }}>{selectedMatch.resultHome} – {selectedMatch.resultAway}</strong></div>}
-            {selectedKO && <div className="ko-pts-info" style={{ marginTop: 0 }}><span>⚠ Knockout — 90-min score only</span><span>No draws allowed</span></div>}
+            {selectedMatch?.completed && <div className="hint">Current: <strong style={{ color: "var(--gold)" }}>{selectedMatch.resultHome} – {selectedMatch.resultAway}</strong>{selectedMatch.outrightWinner && <span style={{ color: "var(--outright-l)", marginLeft: 8 }}>🏅 {selectedMatch.outrightWinner}</span>}</div>}
+            {selectedKO && (
+              <div className="ko-pts-info" style={{ marginTop: 0 }}>
+                <span>⚠ Knockout — 90-min score only</span>
+                <span>No draws allowed</span>
+              </div>
+            )}
             <div className="form-group">
               <label>{selectedKO ? "90-Min Score" : "Score"}</label>
               <div className="score-row">
@@ -1348,8 +1464,18 @@ function AdminTab({ db, users, matches, preds, bonus, settings, recalcAll, toast
                 <input type="number" min="0" value={resultA} onChange={e => setResultA(e.target.value)} placeholder="0" />
               </div>
             </div>
+            {selectedKO && (
+              <div className="form-group">
+                <label style={{ color: "var(--outright-l)" }}>Outright Winner (+1 pt bonus)</label>
+                <select value={resultOutright} onChange={e => setResultOutright(e.target.value)}>
+                  <option value="">— none / decided in 90 mins —</option>
+                  {selectedMatch && <option value={selectedMatch.homeTeam}>{selectedMatch.homeTeam}</option>}
+                  {selectedMatch && <option value={selectedMatch.awayTeam}>{selectedMatch.awayTeam}</option>}
+                </select>
+              </div>
+            )}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button className="btn-blue" disabled={saving} onClick={() => saveResult(resultSel, resultH, resultA)}>
+              <button className="btn-blue" disabled={saving} onClick={() => saveResult(resultSel, resultH, resultA, selectedKO ? resultOutright : null)}>
                 {saving ? "Saving…" : "Save Score & Recalculate"}
               </button>
               {selectedMatch?.completed && <button className="btn-red" disabled={saving} onClick={() => clearResult(resultSel)}>Clear Result</button>}
@@ -1516,14 +1642,13 @@ export default function App() {
     const { firestore, doc, setDoc } = db;
     const predData = { home: Math.max(0, Number(home)), away: Math.max(0, Number(away)), pts: 0 };
     if (match.completed) {
-      predData.pts = calcPts(predData.home, predData.away, Number(match.resultHome), Number(match.resultAway), stage);
+      predData.pts = calcPts(predData.home, predData.away, Number(match.resultHome), Number(match.resultAway), stage, match.homeTeam, match.awayTeam, match.outrightWinner || null);
     }
     await setDoc(doc(firestore, "predictions", user.id), { [matchId]: predData }, { merge: true });
     toast.show(isKnockout(stage) ? "Knockout pick saved!" : "Prediction saved!", "success");
   };
 
-  // ── Admin score handlers: pass updated match data directly to recalcAll ──
-  const adminSetScore = async (matchId, h, a) => {
+  const adminSetScore = async (matchId, h, a, outrightWinner = null) => {
     if (!db) return;
     const match = matches.find(m => m.id === matchId);
     if (isKnockout(match?.stage) && Number(h) === Number(a)) { toast.show("Knockout scores can't be equal — must have a winner.", "error"); return; }
@@ -1531,9 +1656,10 @@ export default function App() {
       const { firestore, doc, updateDoc } = db;
       const resultHome = Math.max(0, Number(h));
       const resultAway = Math.max(0, Number(a));
-      await updateDoc(doc(firestore, "matches", matchId), { resultHome, resultAway, completed: true });
-      // Pass the updated match directly so recalcAll doesn't rely on the listener catching up
-      await recalcAll({ id: matchId, resultHome, resultAway, completed: true, stage: match?.stage });
+      const updateData = { resultHome, resultAway, completed: true };
+      if (isKnockout(match?.stage)) updateData.outrightWinner = outrightWinner || null;
+      await updateDoc(doc(firestore, "matches", matchId), updateData);
+      await recalcAll({ id: matchId, resultHome, resultAway, completed: true, stage: match?.stage, homeTeam: match?.homeTeam, awayTeam: match?.awayTeam, outrightWinner: outrightWinner || null });
       toast.show("Score saved & points recalculated!", "success");
     } catch (err) {
       console.error(err);
@@ -1545,9 +1671,8 @@ export default function App() {
     if (!db) return;
     try {
       const { firestore, doc, updateDoc } = db;
-      await updateDoc(doc(firestore, "matches", matchId), { resultHome: null, resultAway: null, completed: false });
-      // Pass the cleared match directly
-      await recalcAll({ id: matchId, resultHome: null, resultAway: null, completed: false });
+      await updateDoc(doc(firestore, "matches", matchId), { resultHome: null, resultAway: null, completed: false, outrightWinner: null });
+      await recalcAll({ id: matchId, resultHome: null, resultAway: null, completed: false, outrightWinner: null });
       toast.show("Result cleared.", "success");
     } catch (err) {
       console.error(err);
@@ -1645,84 +1770,58 @@ export default function App() {
               </div>
             </div>
             <div style={{ marginBottom: 20 }}>
-              <div className="section-label" style={{ marginBottom: 12, color: "var(--knockout-l)"}}>
+              <div className="section-label" style={{ marginBottom: 12, color: "var(--knockout-l)" }}>
                 Knockout Stages — Predict the Outright Winner &amp; 90-min Score
               </div>
               <div style={{ color: "var(--muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.7 }}>
-                From the Round of 32 onwards, predict who wins <strong style={{ color: "var(--text)" }}>(Outright winner)</strong> and the 90-minute score. Respective points increase each round by 1. <br></br>
+                From the Round of 32 onwards, predict who wins <strong style={{ color: "var(--text)" }}>(Outright winner)</strong> and the 90-minute score. Respective points increase each round by 1.
+              </div>
+              {/* Outright winner bonus callout */}
+              <div style={{ background: "rgba(155,89,182,0.1)", border: "1px solid rgba(155,89,182,0.35)", borderRadius: 8, padding: "12px 16px", marginBottom: 14 }}>
+                <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 13, color: "var(--outright-l)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
+                  Outright Winner Bonus · +1 pt
+                </div>
+                <div style={{ fontSize: 13, color: "var(--muted-l)", lineHeight: 1.7 }}>
+                  If you correctly predict the outright winner, you earn a bonus <strong style={{ color: "var(--outright-l)" }}>+1 pt</strong>. This is on top of your score points.
+                </div>
               </div>
               <div style={{ overflowX: "auto", borderRadius: 8, border: "1px solid var(--border)" }}>
-  <style>{`
-    .pts-badge.badge-winner {
-      background: #7EB8FF !important;
-      color: #000000 !important;
-      border-color: #7EB8FF !important;
-    }
-    .pts-badge.badge-diff {
-      background: var(--malachite-l) !important;
-      color: #000000 !important;
-      border-color: var(--malachite-l) !important;
-    }
-    .pts-badge.badge-exact {
-      background: var(--gold-bright) !important;
-      color: #000000 !important;
-      border-color: var(--gold-bright) !important;
-    }
-  `}</style>
-  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>
-  <thead>
-    <tr style={{ background: "rgba(123,79,212,0.1)" }}>
-      {["Stage", "Correct Winner", "Correct Goal Diff", "Exact Score"].map(h => {
-        // Assign the specific text color to each column header wording
-        let wordingColor = "var(--knockout-l)"; // default color
-        if (h === "Correct Winner") wordingColor = "#7EB8FF";
-        if (h === "Correct Goal Diff") wordingColor = "var(--malachite-l)";
-        if (h === "Exact Score") wordingColor = "var(--gold-bright)";
-
-        return (
-          <th 
-            key={h} 
-            style={{ 
-              padding: "10px 14px", 
-              fontSize: 11, 
-              color: wordingColor, // 🌟 Wording color applied here
-              textAlign: h === "Stage" ? "left" : "center", 
-              fontFamily: "'Barlow Condensed',sans-serif", 
-              letterSpacing: 1, 
-              textTransform: "uppercase" 
-            }}
-          >
-            {h}
-          </th>
-        );
-      })}
-    </tr>
-  </thead>
-  <tbody>
-    {[{ label: "Round of 32", stage: "R32" }, { label: "Round of 16", stage: "R16" }, { label: "Quarter-Final", stage: "QF" }, { label: "Semi-Final", stage: "SF" }, { label: "Final", stage: "Final" }].map(({ label, stage }) => {
-      const base = knockoutBasePts(stage);
-      return (
-        <tr key={stage} style={{ borderTop: "1px solid var(--border)" }}>
-          <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>{label}</td>
-          
-          {/* The pts text badges below remain exactly the same as your original style */}
-          <td style={{ padding: "10px 14px", textAlign: "center" }}>
-            <span className="pts-badge knockout">{base} pts</span>
-          </td>
-          <td style={{ padding: "10px 14px", textAlign: "center" }}>
-            <span className="pts-badge knockout">{base + 1} pts</span>
-          </td>
-          <td style={{ padding: "10px 14px", textAlign: "center" }}>
-            <span className="pts-badge knockout">{base + 2} pts</span>
-          </td>
-        </tr>
-      );
-    })}
-  </tbody>
-</table>
+                <style>{`
+                  .pts-badge.badge-winner { background: #7EB8FF !important; color: #000000 !important; }
+                  .pts-badge.badge-diff   { background: var(--malachite-l) !important; color: #000000 !important; }
+                  .pts-badge.badge-exact  { background: var(--gold-bright) !important; color: #000000 !important; }
+                `}</style>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>
+                  <thead>
+                    <tr style={{ background: "rgba(123,79,212,0.1)" }}>
+                      {["Stage", "Correct Winner", "Correct Goal Diff", "Exact Score"].map(h => {
+                        let color = "var(--knockout-l)";
+                        if (h === "Correct Winner") color = "#7EB8FF";
+                        if (h === "Correct Goal Diff") color = "var(--malachite-l)";
+                        if (h === "Exact Score") color = "var(--gold-bright)";
+                        return (
+                          <th key={h} style={{ padding: "10px 14px", fontSize: 11, color, textAlign: h === "Stage" ? "left" : "center", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 1, textTransform: "uppercase" }}>{h}</th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[{ label: "Round of 32", stage: "R32" }, { label: "Round of 16", stage: "R16" }, { label: "Quarter-Final", stage: "QF" }, { label: "Semi-Final", stage: "SF" }, { label: "Final", stage: "Final" }].map(({ label, stage }) => {
+                      const base = knockoutBasePts(stage);
+                      return (
+                        <tr key={stage} style={{ borderTop: "1px solid var(--border)" }}>
+                          <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: "var(--text)", fontFamily: "'Barlow Condensed',sans-serif" }}>{label}</td>
+                          <td style={{ padding: "10px 14px", textAlign: "center" }}><span className="pts-badge knockout">{base} pts</span></td>
+                          <td style={{ padding: "10px 14px", textAlign: "center" }}><span className="pts-badge knockout">{base + 1} pts</span></td>
+                          <td style={{ padding: "10px 14px", textAlign: "center" }}><span className="pts-badge knockout">{base + 2} pts</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
               <div style={{ marginTop: 12, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
-                <strong style={{ color: "var(--text)" }}>Example:</strong> Round of 32, Japan vs Tunisia — you predict Japan wins 3–1. The actual result is Japan 2–0. You get <strong style={{ color: "var(--knockout-l)" }}>2 pts</strong> (correct winner). If you predicted 2–0 exactly, you'd get <strong style={{ color: "var(--knockout-l)" }}>4 pts</strong>.
+                <strong style={{ color: "var(--text)" }}>Example:</strong> Round of 32, Brazil vs Japan — you predict Japan wins 3–1, with Outright Winner Japan. The actual 90-min result is Japan 2–0. You get <strong style={{ color: "var(--knockout-l)" }}>2 pts</strong> (correct winner). You'd also earn <strong style={{ color: "var(--outright-l)" }}>+1 pt</strong> outright bonus.
               </div>
             </div>
             <div>

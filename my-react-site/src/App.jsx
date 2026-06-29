@@ -142,12 +142,22 @@ function saveSession(s) { localStorage.setItem("wc_session", JSON.stringify(s));
 function ptsReason(pts, stage, base) {
   if (isKnockout(stage)) {
     const b = base ?? knockoutBasePts(stage);
-    if (pts >= b + 3) return { label: "Exact Score + Winner Bonus", color: "var(--gold-bright)" };
-    if (pts === b + 2) return { label: "Exact Score", color: "var(--gold-bright)" };
-    if (pts === b + 1) return { label: "Correct Goal Diff", color: "var(--malachite-l)" };
-    if (pts === b) return { label: "Correct 90-min Winner", color: "#7EB8FF" };
-    if (pts === 1) return { label: "Winner Bonus Only", color: "#B388FF" };
-    return { label: "No Points", color: "var(--muted)" };
+if (matchPts === 3 && hasBonus) return { label: "Exact Score + Winner Bonus", color: "var(--gold-bright)" };
+  if (matchPts === 3) return { label: "Exact Score", color: "var(--gold-bright)" };
+  
+  // 2 Points (Goal Diff)
+  if (matchPts === 2 && hasBonus) return { label: "Correct Goal Diff + Winner Bonus", color: "var(--malachite-l)" };
+  if (matchPts === 2) return { label: "Correct Goal Diff", color: "var(--malachite-l)" };
+
+  // 1 Point (Winner / Draw)
+  if (matchPts === 1 && hasBonus) return { label: "Correct Winner + Bonus", color: "#7EB8FF" };
+  if (matchPts === 1) return { label: "Correct Winner", color: "#7EB8FF" };
+
+  // 0 Points (But got the advancing team right)
+  if (hasBonus) return { label: "Winner Bonus Only", color: "#B388FF" };
+
+  // 0 Points total
+  return { label: "No Points", color: "var(--muted)" };
   }
   if (pts === 3) return { label: "Exact Score", color: "var(--gold-bright)" };
   if (pts === 2) return { label: "Correct Diff", color: "var(--malachite-l)" };

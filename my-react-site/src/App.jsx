@@ -142,10 +142,12 @@ function saveSession(s) { localStorage.setItem("wc_session", JSON.stringify(s));
 function ptsReason(pts, stage, base) {
   if (isKnockout(stage)) {
     const b = base ?? knockoutBasePts(stage);
-if (matchPts === 3 && hasBonus) return { label: "Exact Score + Winner Bonus", color: "var(--gold-bright)" };
+
+  // Exact Score
+  if (matchPts === 3 && hasBonus) return { label: "Exact Score + Winner Bonus", color: "var(--gold-bright)" };
   if (matchPts === 3) return { label: "Exact Score", color: "var(--gold-bright)" };
   
-  // 2 Points (Goal Diff)
+  // Goal Diff
   if (matchPts === 2 && hasBonus) return { label: "Correct Goal Diff + Winner Bonus", color: "var(--malachite-l)" };
   if (matchPts === 2) return { label: "Correct Goal Diff", color: "var(--malachite-l)" };
 

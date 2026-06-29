@@ -173,8 +173,9 @@ function ptsReasonKO(pts, stage, predHome, predAway, actualHome, actualAway, pre
   const ah = Number(actualHome), aa = Number(actualAway);
 
   const exactScore = ph === ah && pa === aa;
-  const correctDiff = (ph - pa) === (ah - aa) && outcome(ph, pa) === outcome(ah, aa);
+  const correctDiff = (ph - pa) === (ah - aa) && outcome(ph, pa) === outcome(ah, aa); 
   const correctDir = outcome(ph, pa) === outcome(ah, aa);
+  
   const correctWinner = resultWinner && predWinner &&
     resultWinner.trim().toLowerCase() === predWinner.trim().toLowerCase();
 
@@ -187,21 +188,34 @@ function ptsReasonKO(pts, stage, predHome, predAway, actualHome, actualAway, pre
   const total = scorePts + winnerPts;
 
   let label = "";
-  if (exactScore && correctWinner) return { label: "Exact Score + Winner Bonus", color: "var(--gold-bright)" };
-  if (exactScore) return { label: "Exact Score", color: "var(--gold-bright)" };
-  if (correctDiff && correctWinner) return { label: "Correct Goal Diff + Winner Bonus", color: "var(--malachite-l)" };
-  if (correctDiff) return { label: "Correct Goal Diff", color: "var(--malachite-l)" };
-  if (correctDir && correctWinner) return { label: "Correct 90-min + Winner Bonus", color: "#7EB8FF" };
-  if (correctDir) return { label: "Correct 90-min Winner", color: "#7EB8FF" };
-  if (correctWinner) return { label: "Winner Bonus Only", color: "#B388FF" };
-  return { label: "No Points", color: "var(--muted)" };
-
   let color = "var(--muted)";
-  if (exactScore) color = "var(--gold-bright)";
-  else if (correctDiff) color = "var(--malachite-l)";
-  else if (correctDir) color = "#7EB8FF";
-  else if (correctWinner) color = "#B388FF";
 
+  if (exactScore && correctWinner) {
+    label = "Exact Score + Winner Bonus";
+    color = "var(--gold-bright)";
+  } else if (exactScore) {
+    label = "Exact Score";
+    color = "var(--gold-bright)";
+  } else if (correctDiff && correctWinner) {
+    label = "Correct Goal Diff + Winner Bonus";
+    color = "var(--malachite-l)";
+  } else if (correctDiff) {
+    label = "Correct Goal Diff";
+    color = "var(--malachite-l)";
+  } else if (correctDir && correctWinner) {
+    label = "Correct 90-min + Winner Bonus";
+    color = "#7EB8FF";
+  } else if (correctDir) {
+    label = "Correct 90-min Winner";
+    color = "#7EB8FF";
+  } else if (correctWinner) {
+    label = "Winner Bonus Only";
+    color = "#B388FF";
+  } else {
+    label = "No Points";
+  }
+
+  // Return exactly one object containing all the calculated data
   return { label, color, total, scorePts, winnerPts };
 }
 
